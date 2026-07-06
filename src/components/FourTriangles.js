@@ -14,11 +14,11 @@ const FourTriangles = ({ player1, player2, player3, player4 }) => {
   const size = 300;
   const isFireWork = useSelector(selectFireworks);
   const [blast, setBlast] = useState(false);
-
   const dispatch = useDispatch();
 
   useEffect(() => {
     if (isFireWork) {
+      setBlast(true);
       const timer = setTimeout(() => {
         setBlast(false);
         dispatch(updateFireworks(false));
@@ -120,7 +120,7 @@ const FourTriangles = ({ player1, player2, player3, player4 }) => {
 
 const PlayerPieces = memo(({ player, style, pieceColor, translate }) => {
   return (
-    <View style={[style.container, style]}>
+    <View style={[styles.container, style]}>
       {player.map((piece, index) => (
         <View
           key={piece.id}
@@ -136,7 +136,7 @@ const PlayerPieces = memo(({ player, style, pieceColor, translate }) => {
             cell={true}
             player={player}
             onPress={() => {}}
-            pieceNo={piece.id}
+            pieceId={piece.id}
             color={pieceColor}
           />
         </View>

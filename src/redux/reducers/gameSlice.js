@@ -29,6 +29,18 @@ export const gameSlice = createSlice({
       state.touchDiceBlock = true;
       state.cellSelectionPlayer = action.payload.playerNo;
     },
+
+    disableTouch: state => {
+      state.touchDiceBlock = true;
+      state.cellSelectionPlayer = -1;
+      state.pileSelectionPlayer = -1;
+    },
+
+    unfreezeDice: state => {
+      state.touchDiceBlock = false;
+      state.isDiceRolled = false;
+    },
+
     updatePlayerPieceValue: (state, action) => {
       const { travelCount, pos, pieceId, playerNo } = action.payload;
       const playerPiece = state[playerNo];
@@ -58,10 +70,6 @@ export const gameSlice = createSlice({
         }
       }
     },
-    unfreezeDice: state => {
-      state.touchDiceBlock = false;
-      state.isDiceRolled = false;
-    },
   },
 });
 
@@ -75,6 +83,7 @@ export const {
   enableCellSelection,
   updatePlayerPieceValue,
   unfreezeDice,
+  disableTouch
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

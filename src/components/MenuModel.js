@@ -1,82 +1,83 @@
-import { View, Text, StyleSheet, Modal } from 'react-native';
+import { View, Text, Button, StyleSheet } from 'react-native';
+import Modal from 'react-native-modal';
 import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
-import { goBack } from '../helpers/NavigationUtil';
 import { resetGame } from '../redux/reducers/gameSlice';
 import { playSound } from '../helpers/SoundUtility';
+import { goBack } from '../helpers/NavigationUtil';
 import LinearGradient from 'react-native-linear-gradient';
 import GradientButton from './GradientButton';
 
 const MenuModel = ({ visible, onPressHide }) => {
-  const disPatch = useDispatch();
+  const dispatch = useDispatch();
 
   const handleNewGame = useCallback(() => {
-    disPatch(resetGame);
-    playSound('game_start');
-    onPressHide();
-  }, [disPatch, onPressHide]);
+    dispatch(resetGame())
+    playSound("game_start")
+    onPressHide()
+  }, [dispatch, onPressHide])
 
   const handleHome = useCallback(() => {
-    goBack();
-  }, []);
+    goBack()
+  }, [])
 
   return (
+
     <Modal
-      style={styles.bottomModalView}
-      isVisible={visible}
+      style={ styles.bottomModalView }
+      isVisible={ visible }
       backdropColor="black"
-      backdropOpacity={0.8}
-      onBackdropPress={onPressHide}
+      backdropOpacity={ 0.8 }
+      onBackdropPress={ onPressHide }
       animationIn="zoomIn"
       animationOut="zoomOut"
-      onBackButtonPress={onPressHide}
+      onBackButtonPress={ onPressHide }
     >
-      <View style={styles.modalContainer}>
+      <View style={ styles.modalContainer }>
         <LinearGradient
-          colors={['#0f0c29', '#302b63', '#24243e']}
-          style={styles.gradientContainer}
+          colors={ ['#0f0c29', '#302b63', '#24243e'] }
+          style={ styles.gradientContainer }
         >
-          <View style={styles.subView}>
-            <GradientButton title="RESUME" onPress={onPressHide} />
-            <GradientButton title="NEW GAME" onPress={handleNewGame} />
-            <GradientButton title="HOME" onPress={handleHome} />
+          <View style={ styles.subView }>
+            <GradientButton title={ "RESUME" } onPress={ onPressHide } />
+            <GradientButton title={ "NEW GAME" } onPress={ handleNewGame } />
+            <GradientButton title={ "HOME" } onPress={ handleHome } />
           </View>
         </LinearGradient>
       </View>
     </Modal>
   );
+
 };
 
 const styles = StyleSheet.create({
   bottomModalView: {
-    justifyContent: 'center',
-    width: '95%',
-    alignSelf: 'center',
+    justifyContent: "center",
+    width: "95%",
+    alignSelf: "center"
   },
-
   gradientContainer: {
     borderRadius: 20,
     overflow: 'hidden',
-    width: '96%',
+    width: "96%",
     borderWidth: 2,
-    borderColor: 'gold',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "gold",
+    justifyContent: "center",
+    alignItems: "center"
   },
 
   subView: {
-    width: '100%',
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
     marginVertical: 20,
-    alignSelf: 'center',
-    justifyContent: 'center',
-    alignItems: 'center',
+    alignSelf: "center",
   },
-
   modalContainer: {
-    flex: 1,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center"
+  }
+})
+
 export default MenuModel;

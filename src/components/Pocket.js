@@ -87,7 +87,7 @@ const Plot = ({ pieceNo, player, data, handlePress, color }) => {
     <View style={[styles.plot, { backgroundColor: color }]}>
       {data && data[pieceNo]?.pos === 0 && (
         <Pile
-          pieceNo={pieceNo}
+          pieceId={data[pieceNo]?.id}
           player={player}
           color={color}
           onPress={() => handlePress(data[pieceNo])}

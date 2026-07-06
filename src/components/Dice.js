@@ -1,11 +1,9 @@
 import {
   View,
-  Text,
   Animated,
   Easing,
   StyleSheet,
   Image,
-  Touchable,
   TouchableOpacity,
 } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
@@ -30,13 +28,12 @@ import {
 
 const Dice = React.memo(({ color, rotate, player, data }) => {
   const dispatch = useDispatch();
-
   const currentPlayerChance = useSelector(selectCurrentPlayerChance);
   const isDiceRolled = useSelector(selectDiceRolled);
   const diceNo = useSelector(selectDiceNo);
 
   const playerPieces = useSelector(
-    state => state.game[`player${currentPlayerChance}`],
+    state => state.game[`player${ currentPlayerChance }`],
   );
 
   const pileIcon = BackgroundImage.GetImage(color);
@@ -67,10 +64,12 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
       ).start();
     };
     animateArrow();
-  }, [currentPlayerChance, isDiceRolled, arrowAnim]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPlayerChance, isDiceRolled]);
 
   const handleDicePress = async () => {
-    const newDiceNo = Math.floor(Math.random() * 6) + 1;
+    // const newDiceNo = Math.floor(Math.random() * 6) + 1;
+    const newDiceNo = 3
     playSound('dice_roll');
     setDiceRolling(true);
     await delay(800);
@@ -78,7 +77,7 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
     setDiceRolling(false);
 
     const isAnyPieceAlive = data?.findIndex(i => i.pos !== 0 && i.pos !== 57);
-    const isAnyPieceLocked = data?.findIndex(i => i.pos !== 0);
+    const isAnyPieceLocked = data?.findIndex(i => i.pos === 0);
 
     if (isAnyPieceAlive === -1) {
       if (newDiceNo === 6) {
@@ -112,7 +111,7 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
         return;
       }
 
-      if (newDiceNo) {
+      if (newDiceNo === 6) {
         dispatch(enablePileSelection({ playerNo: player }));
       }
       dispatch(enableCellSelection({ playerNo: player }));
@@ -121,72 +120,67 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
 
   return (
     <View
-      style={[styles.flexRow, { transform: [{ scaleX: rotate ? -1 : 1 }] }]}
+      style={ [styles.flexRow, { transform: [{ scaleX: rotate ? -1 : 1 }] }] }
     >
-      <View style={styles.border1}>
+      <View style={ styles.border1 }>
         <LinearGradient
-          style={styles.linearGradient}
-          colors={['#0052be', '#5f9fcb', '#97c6c9']}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
+          style={ styles.linearGradient }
+          colors={ ['#0052be', '#5f9fcb', '#97c6c9'] }
+          start={ { x: 0, y: 0.5 } }
+          end={ { x: 1, y: 0.5 } }
         >
-          <View style={styles.pileContainer}>
+          <View style={ styles.pileContainer }>
             <Image
-              source={pileIcon}
-              style={[
+              source={ pileIcon }
+              style={ [
                 styles.pileIcon,
-                rotate && { transform: [{ scaleX: -1 }] },
-              ]}
+                // rotate && { transform: [{ scaleX: -1 }] },
+              ] }
             />
           </View>
         </LinearGradient>
       </View>
 
-      <View style={styles.border2}>
-        <LinearGradient
-          style={styles.diceGradient}
-          colors={['#aac8ab', '#aac8ab', '#aac8ab']}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-        >
-          <View style={styles.diceContainer}>
-            {currentPlayerChance === player ? (
+      <View style={ styles.border2 }>
+        <View style={ styles.diceGradient }>
+          <View style={ styles.diceContainer }>
+            { currentPlayerChance === player ? (
               <>
-                {isDiceRolled ? null : (
+                { diceRolling ? null : (
                   <TouchableOpacity
-                    disabled={isDiceRolled}
-                    activeOpacity={0.4}
-                    onPress={handleDicePress}
+                    disabled={ isDiceRolled }
+                    activeOpacity={ 0.4 }
+                    onPress={ handleDicePress }
                   >
-                    <Image source={diceIcon} style={styles.dice} />
+                    <Image source={ diceIcon } style={ styles.dice } />
                   </TouchableOpacity>
-                )}
+                ) }
               </>
-            ) : null}
+            ) : null }
           </View>
-        </LinearGradient>
+        </View>
       </View>
 
-      {currentPlayerChance === player && !isDiceRolled ? (
+      { currentPlayerChance === player && !isDiceRolled ? (
         <Animated.View
-          style={{
+          style={ {
             transform: [{ translateX: arrowAnim }],
-          }}
+          } }
         >
-          <Image source={Arrow} style={{ width: 50, height: 30 }} />
+          <Image source={ Arrow } style={ { width: 50, height: 30 } } />
         </Animated.View>
-      ) : null}
+      ) : null }
 
-      {currentPlayerChance === player && diceRolling ? (
+      { currentPlayerChance === player && diceRolling ? (
         <LottieView
-          source={DiceRoll}
-          style={styles.rollingDice}
-          loop={true}
+          source={ DiceRoll }
+          style={ styles.rollingDice }
+          loop={ true }
           autoPlay
-          cacheComposition={true}
+          // cacheComposition={true}
           hardwareAccelerationAndroid
         />
-      ) : null}
+      ) : null }
     </View>
   );
 });
@@ -238,8 +232,8 @@ const styles = StyleSheet.create({
     height: 80,
     width: 80,
     zIndex: 99,
-    top: -25,
-    right: 20,
+    top: -20,
+    right: 35,
     position: 'absolute',
   },
 

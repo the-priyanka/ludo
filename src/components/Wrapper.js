@@ -5,9 +5,9 @@ import { deviceWidth, deviceHeight } from '../constants/Scaling';
 
 const Wrapper = ({ children, style }) => {
   return (
-    <ImageBackground source={BG} resizeMode="cover" style={styles}>
-      <SafeAreaView style={[styles.safeAreaView, style]}>
-        {children}
+    <ImageBackground source={ BG } resizeMode="cover" style={ styles }>
+      <SafeAreaView style={ [styles.safeAreaView, style] }>
+        { children }
       </SafeAreaView>
     </ImageBackground>
   );

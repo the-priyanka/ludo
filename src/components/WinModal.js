@@ -36,53 +36,54 @@ const WinModal = ({ winner }) => {
 
   return (
     <Modal
-      style={styles.modal}
-      isVisible={visible}
+      style={ styles.modal }
+      isVisible={ visible }
       backdropColor="black"
-      backdropOpacity={0.8}
-      onBackdropPress={() => {}}
+      backdropOpacity={ 0.8 }
+      onBackdropPress={ () => { } }
       animationIn="zoomIn"
       animationOut="zoomOut"
-      onBackButtonPress={() => {}}
+      onBackButtonPress={ () => { } }
     >
       <LinearGradient
-        colors={['#0f0c29', '#302b63', '#24243e']}
-        style={styles.gradientContainer}
+        colors={ ['#0f0c29', '#302b63', '#24243e'] }
+        style={ styles.gradientContainer }
       >
-        <View style={styles.content}>
-          <View style={styles.pileContainer}>
-            <Pile player={winner} color={colorPlayer[winner - 1]} />
+        <View style={ styles.content }>
+          <View style={ styles.pileContainer }>
+            <Pile player={ winner } color={ colorPlayer[winner - 1] } />
           </View>
 
-          <Text style={styles.congratsText}>
-            🥳 Congratulations! PLAYER {winner}
+          <Text style={ styles.congratsText }>
+            🥳 Congratulations! PLAYER { winner }
           </Text>
 
           <LottieView
             autoPlay
             hardwareAccelerationAndroid
-            loop={true}
-            source={Trophy}
-            style={styles.trophyAnimation}
+            loop={ true }
+            source={ Trophy }
+            style={ styles.trophyAnimation }
           />
           <LottieView
             autoPlay
             hardwareAccelerationAndroid
-            loop={true}
-            source={Firework}
-            style={styles.fireworkAnimation}
+            loop={ true }
+            source={ Firework }
+            style={ styles.fireworkAnimation }
           />
-          <GradientButton title={'NEW GAME'} onPress={handleNewGame} />
-          <GradientButton title={'HOME'} onPress={handleHome} />
+          <GradientButton title={ 'NEW GAME' } onPress={ handleNewGame } />
+          <GradientButton title={ 'HOME' } onPress={ handleHome } />
         </View>
       </LinearGradient>
 
       <LottieView
         autoPlay
         hardwareAccelerationAndroid
-        loop={true}
-        source={HeartGirl}
-        style={styles.girlAnimation}
+        loop={ true }
+        source={ HeartGirl }
+        style={ styles.girlAnimation }
+        pointerEvents="none"
       />
     </Modal>
   );
@@ -112,7 +113,10 @@ const styles = StyleSheet.create({
 
   pileContainer: {
     width: 90,
-    height: 40,
+    height: 20,
+    marginTop: 30,
+    justifyContent: "center",
+    alignItems: "center"
   },
   congratsText: {
     fontSize: 18,
@@ -136,7 +140,7 @@ const styles = StyleSheet.create({
 
   girlAnimation: {
     height: 500,
-    width: 380,
+    width: 330,
     position: 'absolute',
     bottom: -200,
     right: -120,

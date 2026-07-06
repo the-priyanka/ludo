@@ -7,6 +7,7 @@ import { ArrowSpot, SafeSpots, StarSpots } from '../../helpers/PlotData';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { RFValue } from 'react-native-responsive-fontsize';
 import Pile from '../Pile';
+import { handleForwardThunk } from '../../redux/reducers/gameAction';
 
 const Cell = ({ id, color, index }) => {
   const dispatch = useDispatch();
@@ -21,63 +22,65 @@ const Cell = ({ id, color, index }) => {
     [plottedPieces, id],
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handlePress = useCallback((playerNo, pieceId) => {}, [dispatch, id]);
+
+  const handlePress = useCallback((playerNo, pieceId) => {
+    dispatch(handleForwardThunk(playerNo, pieceId, id))
+  }, [dispatch, id]);
   return (
     <View
-      style={[
+      style={ [
         styles.container,
         { backgroundColor: isSafeSpot ? color : 'white' },
-      ]}
+      ] }
     >
-      {isStarSpot && (
-        <Ionicons name="star-outline" size={RFValue()} color="grey" />
-      )}
-      {isArrowSpot && (
+      { isStarSpot && (
+        <Ionicons name="star-outline" size={ RFValue() } color="grey" />
+      ) }
+      { isArrowSpot && (
         <Ionicons
           name="arrow-forward-outline"
-          style={{
+          style={ {
             transform: [
               {
                 rotate:
                   id === 38
                     ? '180deg'
                     : id === 25
-                    ? '90deg'
-                    : id === 51
-                    ? '-90deg'
-                    : '0deg',
+                      ? '90deg'
+                      : id === 51
+                        ? '-90deg'
+                        : '0deg',
               },
             ],
-          }}
-          size={RFValue(12)}
-          color={color}
+          } }
+          size={ RFValue(12) }
+          color={ color }
         />
-      )}
+      ) }
 
-      {piecesAtPosition?.map((piece, index) => {
+      { piecesAtPosition?.map((piece, index) => {
         const playerNo =
           piece.id.slice(0, 1) === 'A'
             ? 1
             : piece.id.slice(0, 1) === 'B'
-            ? 2
-            : piece.id.slice(0, 1) === 'C'
-            ? 3
-            : 4;
+              ? 2
+              : piece.id.slice(0, 1) === 'C'
+                ? 3
+                : 4;
 
         const pieceColor =
           piece.id.slice(0, 1) === 'A'
             ? Colors.red
             : piece.id.slice(0, 1) === 'B'
-            ? Colors.green
-            : piece.id.slice(0, 1) === 'C'
-            ? Colors.yellow
-            : Colors.blue;
+              ? Colors.green
+              : piece.id.slice(0, 1) === 'C'
+                ? Colors.yellow
+                : Colors.blue;
 
         return (
           <View
-            key={piece.id}
-            style={[
+            key={ piece.id }
+            style={ [
               styles.pieceContainer,
               {
                 transform: [
@@ -87,8 +90,8 @@ const Cell = ({ id, color, index }) => {
                       piecesAtPosition?.length === 1
                         ? 0
                         : index % 2 === 0
-                        ? -6
-                        : 6,
+                          ? -6
+                          : 6,
                   },
                   {
                     translateY:
@@ -96,19 +99,19 @@ const Cell = ({ id, color, index }) => {
                   },
                 ],
               },
-            ]}
+            ] }
           >
             <Pile
-              cell={true}
-              player={playerNo}
-              onPress={() => handlePress(playerNo, piece.id)}
-              pieceNo={piece.id}
-              color={pieceColor}
+              cell={ true }
+              player={ playerNo }
+              onPress={ () => handlePress(playerNo, piece.id) }
+              pieceId={ piece.id }
+              color={ pieceColor }
             />
           </View>
         );
-      })}
-      {/* <Text style={{ fontSize: 8 }}>{id}</Text> */}
+      }) }
+      {/* <Text style={{ fontSize: 8 }}>{id}</Text> */ }
     </View>
   );
 };

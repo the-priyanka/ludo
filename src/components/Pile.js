@@ -86,11 +86,11 @@ const Pile = ({ cell, pieceId, player, color, onPress }) => {
     <TouchableOpacity
       style={styles.container}
       activeOpacity={0.5}
-      disabled={!(cell ? isCellEnabled && isForwardable : isPileEnabled)}
+      disabled={!(cell ? isCellEnabled && isForwardable() : isPileEnabled)}
       onPress={onPress}
     >
       <View style={styles.hollowCircle}>
-        {(cell ? isCellEnabled && isForwardable : isPileEnabled) && (
+        {(cell ? isCellEnabled && isForwardable() : isPileEnabled) && (
           <View style={styles.dashedCircleContainer}>
             <Animated.View
               style={[
@@ -105,7 +105,7 @@ const Pile = ({ cell, pieceId, player, color, onPress }) => {
                   r="8"
                   stroke="white"
                   strokeWidth="2"
-                  strokeDasharray="4.4"
+                  strokeDasharray="4 4"
                   strokeDashoffset="0"
                   fill="transparent"
                 />
