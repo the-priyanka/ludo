@@ -46,10 +46,17 @@ const VsCpuModal = ({ visible, onPressHide }) => {
   const handleSelect = useCallback(
     (playerCount) => {
       playSound('ui');
-      const cpuList = playerCount === 2 ? [2] : [2, 3, 4];
+      // 2-player: Player1(Red) vs Player3(Yellow CPU) — diagonal opponents
+      // 4-player: Player1(Red) vs Player2,3,4 CPU
+      const cpuList = playerCount === 2 ? [3] : [2, 3, 4];
+      const activeList = playerCount === 2 ? [1, 3] : [1, 2, 3, 4];
       dispatch(resetGame());
       dispatch(setGameMode('vscpu'));
-      dispatch(setCpuPlayers({ cpuPlayers: cpuList, activePlayers: playerCount }));
+      dispatch(setCpuPlayers({
+        cpuPlayers: cpuList,
+        activePlayers: playerCount,
+        activePlayersList: activeList,
+      }));
       onPressHide();
       navigate('LudoBoardScreen');
       playSound('game_start');
@@ -103,11 +110,11 @@ const VsCpuModal = ({ visible, onPressHide }) => {
           >
             <View style={ styles.dotRow }>
               <PlayerDot color="#E8524A" />
-              <PlayerDot color="#888" />
+              <PlayerDot color="#FFC107" />
             </View>
             <View style={ styles.optionTextBlock }>
               <Text style={ styles.optionTitle }>2 players</Text>
-              <Text style={ styles.optionDesc }>You vs 1 CPU · recommended</Text>
+              <Text style={ styles.optionDesc }>You (Red) vs 1 CPU (Yellow) · recommended</Text>
             </View>
             { selectedPlayers === 2 && (
               <Text style={ styles.checkmark }>✓</Text>
@@ -142,7 +149,12 @@ const VsCpuModal = ({ visible, onPressHide }) => {
         {/* Info bar */ }
         <View style={ styles.infoBar }>
           <View style={ styles.infoRedDot } />
-          <Text style={ styles.infoText }>You play red, starting bottom-left</Text>
+          <Text style={ styles.infoText }>
+            { selectedPlayers === 2
+              ? 'You play Red (bottom-left) vs Yellow CPU (top-right)'
+              : 'You play Red (bottom-left) vs 3 CPU opponents'
+            }
+          </Text>
         </View>
 
         {/* Start game button */ }

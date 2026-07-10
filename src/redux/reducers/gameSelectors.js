@@ -18,4 +18,5 @@ export const selectFireworks = state => state.game.fireworks;
 export const selectCpuPlayers = state => state.game.cpuPlayers;
 export const selectGameMode = state => state.game.gameMode;
 export const selectActivePlayers = state => state.game.activePlayers;
+export const selectActivePlayersList = state => state.game.activePlayersList || [1,2,3,4];
 export const selectTurnKey = state => state.game.turnKey;

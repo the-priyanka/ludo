@@ -13,6 +13,8 @@ import {
   selectDiceNo,
   selectDiceRolled,
   selectActivePlayers,
+  selectActivePlayersList,
+  selectCpuPlayers,
 } from '../redux/reducers/gameSelectors';
 import { BackgroundImage } from '../helpers/GetIcons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -33,10 +35,17 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
   const isDiceRolled = useSelector(selectDiceRolled);
   const diceNo = useSelector(selectDiceNo);
   const activePlayers = useSelector(selectActivePlayers);
+  const activePlayersList = useSelector(selectActivePlayersList);
+  const cpuPlayers = useSelector(selectCpuPlayers);
+
+  // True when it's this Dice component's player's turn AND that player is a CPU
+  const isCpuTurn = currentPlayerChance === player && cpuPlayers.includes(player);
 
   const playerPieces = useSelector(
     state => state.game[`player${ currentPlayerChance }`],
   );
+
+  console.log("cpuPlayers---->", cpuPlayers)
 
   const pileIcon = BackgroundImage.GetImage(color);
   const diceIcon = BackgroundImage.GetImage(diceNo);
@@ -82,9 +91,9 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
     const isAnyPieceLocked = data?.findIndex(i => i.pos === 0);
 
     const getNextChance = (current) => {
-      let next = current + 1;
-      if (next > activePlayers) next = 1;
-      return next;
+      const idx = activePlayersList.indexOf(current);
+      if (idx === -1) return activePlayersList[0];
+      return activePlayersList[(idx + 1) % activePlayersList.length];
     };
 
     if (isAnyPieceAlive === -1) {
@@ -120,44 +129,51 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
     <View
       style={ [styles.flexRow, { transform: [{ scaleX: rotate ? -1 : 1 }] }] }
     >
-      <View style={ styles.border1 }>
-        <LinearGradient
-          style={ styles.linearGradient }
-          colors={ ['#0052be', '#5f9fcb', '#97c6c9'] }
-          start={ { x: 0, y: 0.5 } }
-          end={ { x: 1, y: 0.5 } }
-        >
-          <View style={ styles.pileContainer }>
-            <Image
-              source={ pileIcon }
-              style={ [
-                styles.pileIcon,
-                // rotate && { transform: [{ scaleX: -1 }] },
-              ] }
-            />
-          </View>
-        </LinearGradient>
-      </View>
+      {
+        activePlayersList.includes(player) && (
+          <>
+            <View style={ styles.border1 }>
+              <LinearGradient
+                style={ styles.linearGradient }
+                colors={ ['#0052be', '#5f9fcb', '#97c6c9'] }
+                start={ { x: 0, y: 0.5 } }
+                end={ { x: 1, y: 0.5 } }
+              >
+                <View style={ styles.pileContainer }>
+                  <Image
+                    source={ pileIcon }
+                    style={ [
+                      styles.pileIcon,
+                    ] }
+                  />
+                </View>
+              </LinearGradient>
+            </View>
 
-      <View style={ styles.border2 }>
-        <View style={ styles.diceGradient }>
-          <View style={ styles.diceContainer }>
-            { currentPlayerChance === player ? (
-              <>
-                { diceRolling ? null : (
-                  <TouchableOpacity
-                    disabled={ isDiceRolled }
-                    activeOpacity={ 0.4 }
-                    onPress={ handleDicePress }
-                  >
-                    <Image source={ diceIcon } style={ styles.dice } />
-                  </TouchableOpacity>
-                ) }
-              </>
-            ) : null }
-          </View>
-        </View>
-      </View>
+            <View style={ styles.border2 }>
+              <View style={ styles.diceGradient }>
+                <View style={ styles.diceContainer }>
+                  { currentPlayerChance === player ? (
+                    <>
+                      { diceRolling ? null : (
+                        <TouchableOpacity
+                          disabled={ isDiceRolled || isCpuTurn }
+                          activeOpacity={ isCpuTurn ? 1 : 0.4 }
+                          onPress={ handleDicePress }
+                        >
+                          <Image source={ diceIcon } style={ styles.dice } />
+                        </TouchableOpacity>
+                      ) }
+                    </>
+                  ) : null }
+                </View>
+              </View>
+            </View>
+
+          </>
+        )
+      }
+
 
       { currentPlayerChance === player && !isDiceRolled ? (
         <Animated.View

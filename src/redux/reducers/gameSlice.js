@@ -76,6 +76,7 @@ export const gameSlice = createSlice({
     setCpuPlayers: (state, action) => {
       state.cpuPlayers = action.payload.cpuPlayers;
       state.activePlayers = action.payload.activePlayers;
+      state.activePlayersList = action.payload.activePlayersList || [1,2,3,4];
     },
     setGameMode: (state, action) => {
       state.gameMode = action.payload;

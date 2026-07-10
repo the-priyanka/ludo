@@ -15,20 +15,18 @@ function checkWinningCriteria(pieces) {
   return true; // if all piece have travelCount >= 57, return true
 }
 
-// Get next player considering activePlayers count
-function getNextPlayer(currentPlayer, activePlayers) {
-  let next = currentPlayer + 1;
-  if (next > activePlayers) {
-    next = 1;
-  }
-  return next;
+// Get next player from the active players list (supports non-contiguous players like [1,3])
+function getNextPlayer(currentPlayer, activePlayersList) {
+  const idx = activePlayersList.indexOf(currentPlayer);
+  if (idx === -1) return activePlayersList[0]; // fallback
+  return activePlayersList[(idx + 1) % activePlayersList.length];
 }
 
 export const handleForwardThunk = (playerNo, id, pos) => async (dispatch, getState) => {
   const state = getState();
   const plottedPieces = selectCurrentPositions(state);
   const diceNo = selectDiceNo(state);
-  const activePlayers = state.game.activePlayers || 4;
+  const activePlayersList = state.game.activePlayersList || [1,2,3,4];
 
   const piecesAtPosition = plottedPieces?.filter((item) => item.pos === pos);
 
@@ -155,7 +153,7 @@ export const handleForwardThunk = (playerNo, id, pos) => async (dispatch, getSta
 
     }
   } else {
-    const chancePlayer = getNextPlayer(playerNo, activePlayers);
+    const chancePlayer = getNextPlayer(playerNo, activePlayersList);
     dispatch(updatePlayerChance({ chancePlayer }))
   }
 }

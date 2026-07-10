@@ -84,7 +84,7 @@ export const handleCpuTurn = playerNo => async (dispatch, getState) => {
   const state         = getState();
   const playerPieces  = state.game[`player${playerNo}`];
   const currentPos    = selectCurrentPositions(state);
-  const activePlayers = state.game.activePlayers || 4;
+  const activePlayersList = state.game.activePlayersList || [1,2,3,4];
 
   const { turningPoints, victoryStart } = require('./PlotData');
 
@@ -93,8 +93,8 @@ export const handleCpuTurn = playerNo => async (dispatch, getState) => {
   if (!result) {
     // No move — pass turn
     await cpuDelay(300);
-    let next = playerNo + 1;
-    if (next > activePlayers) next = 1;
+    const idx = activePlayersList.indexOf(playerNo);
+    const next = activePlayersList[(idx + 1) % activePlayersList.length];
     dispatch(unfreezeDice());
     dispatch(updatePlayerChance({ chancePlayer: next }));
     return;

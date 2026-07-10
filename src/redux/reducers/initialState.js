@@ -41,8 +41,9 @@ export const initialState = {
   fireworks: false,
   winner: null,
   // VS CPU mode state
-  cpuPlayers: [],        // e.g. [2] for 2-player, [2,3,4] for 4-player
-  gameMode: null,        // 'vscpu' | null
-  activePlayers: 4,      // 2 or 4
-  turnKey: 0,            // increments on every turn change (even same player after 6)
+  cpuPlayers: [],              // e.g. [3] for 2-player vs Yellow, [2,3,4] for 4-player
+  gameMode: null,              // 'vscpu' | null
+  activePlayers: 4,            // 2 or 4 (legacy count, kept for compatibility)
+  activePlayersList: [1,2,3,4], // exact list of active player numbers for turn cycling
+  turnKey: 0,                  // increments on every turn change (even same player after 6)
 };

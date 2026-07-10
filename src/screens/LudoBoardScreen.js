@@ -78,8 +78,8 @@ const LudoBoardScreen = () => {
     ) {
       dispatch(handleCpuTurn(chancePlayer));
     }
-  // turnKey changes every updatePlayerChance — even when same player rolls 6 again
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // turnKey changes every updatePlayerChance — even when same player rolls 6 again
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turnKey, chancePlayer, cpuPlayers, winner, isFocused]);
   // ────────────────────────────────────────────────────────────────────────────
 
@@ -117,6 +117,7 @@ const LudoBoardScreen = () => {
     };
   }, [isFocused, opacity]);
 
+
   return (
     <Wrapper>
       <TouchableOpacity style={ styles.menuIcons } onPress={ handleMenuPress }>
@@ -133,9 +134,13 @@ const LudoBoardScreen = () => {
         </View>
         <View style={ styles.ludoBoard }>
           <View style={ styles.plotContainer }>
-            <Pocket color={ Colors.green } player={ 2 } data={ player2 } />
+            <Pocket color={ Colors.green } player={ 2 } data={ player2 }
+              isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(2) ? true : false) : true }
+            />
             <VerticalPath cells={ Plot2Data } color={ Colors.yellow } />
-            <Pocket color={ Colors.yellow } player={ 3 } data={ player3 } />
+            <Pocket color={ Colors.yellow } player={ 3 } data={ player3 }
+              isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(3) ? true : false) : true }
+            />
           </View>
           <View style={ styles.pathContainer }>
             <HorizontalPath cells={ Plot1Data } color={ Colors.green } />
@@ -148,9 +153,12 @@ const LudoBoardScreen = () => {
             <HorizontalPath cells={ Plot3Data } color={ Colors.blue } />
           </View>
           <View style={ styles.plotContainer }>
-            <Pocket color={ Colors.red } player={ 1 } data={ player1 } />
+            <Pocket color={ Colors.red } player={ 1 } data={ player1 }
+            />
             <VerticalPath cells={ Plot4Data } color={ Colors.red } />
-            <Pocket color={ Colors.blue } player={ 4 } data={ player4 } />
+            <Pocket color={ Colors.blue } player={ 4 } data={ player4 }
+              isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(4) ? true : false) : true }
+            />
           </View>
         </View>
         <View

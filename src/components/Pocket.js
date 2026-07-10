@@ -9,7 +9,7 @@ import {
   updatePlayerPieceValue,
 } from '../redux/reducers/gameSlice';
 
-const Pocket = ({ color, player, data }) => {
+const Pocket = ({ color, player, data, isPileEnable }) => {
   const dispatch = useDispatch();
 
   const handlePress = async value => {
@@ -43,38 +43,42 @@ const Pocket = ({ color, player, data }) => {
     dispatch(unfreezeDice());
   };
   return (
-    <View style={[styles.container, { backgroundColor: color }]}>
-      <View style={styles.childFrame}>
-        <View style={styles.flexRow}>
+    <View style={ [styles.container, { backgroundColor: color }] }>
+      <View style={ styles.childFrame }>
+        <View style={ styles.flexRow }>
           <Plot
-            pieceNo={0}
-            player={player}
-            color={color}
-            data={data}
-            handlePress={handlePress}
+            pieceNo={ 0 }
+            player={ player }
+            color={ color }
+            data={ data }
+            handlePress={ handlePress }
+            isPileEnable={ isPileEnable }
           />
           <Plot
-            pieceNo={1}
-            player={player}
-            color={color}
-            data={data}
-            handlePress={handlePress}
+            pieceNo={ 1 }
+            player={ player }
+            color={ color }
+            data={ data }
+            handlePress={ handlePress }
+            isPileEnable={ isPileEnable }
           />
         </View>
-        <View style={[styles.flexRow, { marginTop: 20 }]}>
+        <View style={ [styles.flexRow, { marginTop: 20 }] }>
           <Plot
-            pieceNo={2}
-            player={player}
-            color={color}
-            data={data}
-            handlePress={handlePress}
+            pieceNo={ 2 }
+            player={ player }
+            color={ color }
+            data={ data }
+            handlePress={ handlePress }
+            isPileEnable={ isPileEnable }
           />
           <Plot
-            pieceNo={3}
-            player={player}
-            color={color}
-            data={data}
-            handlePress={handlePress}
+            pieceNo={ 3 }
+            player={ player }
+            color={ color }
+            data={ data }
+            handlePress={ handlePress }
+            isPileEnable={ isPileEnable }
           />
         </View>
       </View>
@@ -82,17 +86,17 @@ const Pocket = ({ color, player, data }) => {
   );
 };
 
-const Plot = ({ pieceNo, player, data, handlePress, color }) => {
+const Plot = ({ pieceNo, player, data, handlePress, color, isPileEnable = true }) => {
   return (
-    <View style={[styles.plot, { backgroundColor: color }]}>
-      {data && data[pieceNo]?.pos === 0 && (
+    <View style={ [styles.plot, { backgroundColor: color }] }>
+      { isPileEnable && data && data[pieceNo]?.pos === 0 && (
         <Pile
-          pieceId={data[pieceNo]?.id}
-          player={player}
-          color={color}
-          onPress={() => handlePress(data[pieceNo])}
+          pieceId={ data[pieceNo]?.id }
+          player={ player }
+          color={ color }
+          onPress={ () => handlePress(data[pieceNo]) }
         />
-      )}
+      ) }
     </View>
   );
 };
