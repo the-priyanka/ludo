@@ -4,6 +4,7 @@ import { deviceWidth, deviceHeight } from '../constants/Scaling';
 import Wrapper from '../components/Wrapper';
 import Logo from '../assets/images/logo.png';
 import { prepareNavigation, resetAndNavigate } from '../helpers/NavigationUtil';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SplashScreen = () => {
   const [isStop] = useState(false);
@@ -11,8 +12,13 @@ const SplashScreen = () => {
 
   useEffect(() => {
     prepareNavigation();
-    setTimeout(() => {
-      resetAndNavigate('HomeScreen');
+    setTimeout(async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      if (token) {
+        resetAndNavigate('HomeScreen');
+      } else {
+        resetAndNavigate('LoginScreen');
+      }
     }, 1500);
   }, []);
 

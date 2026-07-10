@@ -2,6 +2,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import LudoBoardScreen from '../screens/LudoBoardScreen';
 import SplashScreen from '../screens/SplashScreen';
 import HomeScreen from '../screens/HomeScreen';
+import LoginScreen from '../screens/LoginScreen';
+import SignupScreen from '../screens/SignupScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import { navigationRef } from '../helpers/NavigationUtil';
 
 const {
@@ -21,8 +24,25 @@ const Navigation = () => {
       >
         <Stack.Screen name="SplashScreen" component={SplashScreen} />
         <Stack.Screen
+          name="LoginScreen"
+          component={LoginScreen}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="SignupScreen"
+          component={SignupScreen}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
           name="HomeScreen"
           component={HomeScreen}
+          options={{
+            animation: 'fade',
+          }}
+        />
+        <Stack.Screen
+          name="ProfileScreen"
+          component={ProfileScreen}
           options={{
             animation: 'fade',
           }}
