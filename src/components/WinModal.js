@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
-import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useEffect, useState, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { announceWinner, resetGame } from '../redux/reducers/gameSlice';
 import { playSound } from '../helpers/SoundUtility';
 import { resetAndNavigate } from '../helpers/NavigationUtil';
@@ -13,14 +13,44 @@ import Firework from '../assets/animation/firework.json';
 import GradientButton from './GradientButton';
 import Pile from './Pile';
 import { colorPlayer } from '../helpers/PlotData';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../helpers/api';
 
 const WinModal = ({ winner }) => {
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const [visible, setVisible] = useState(!!winner);
+  const prizeMoney = useSelector((state) => state.game.prizeMoney);
+  const hasCredited = useRef(false);
+
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.success ? res.data.user : null;
+    },
+    enabled: !!winner, // only fetch if there is a winner
+  });
+
+  const updateCoinsMutation = useMutation({
+    mutationFn: async (newCoins) => {
+      const res = await api.put('/auth/me', { coins: newCoins });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['user'], data.user);
+    },
+  });
 
   useEffect(() => {
     setVisible(!!winner);
-  }, [winner]);
+
+    // Credit prize money to user if Player 1 wins
+    if (winner === 1 && prizeMoney > 0 && user && !hasCredited.current) {
+      hasCredited.current = true;
+      updateCoinsMutation.mutate(user.coins + prizeMoney);
+    }
+  }, [winner, user, prizeMoney, updateCoinsMutation]);
 
   const handleNewGame = () => {
     dispatch(resetGame());

@@ -19,14 +19,16 @@ import SoundPlayer from 'react-native-sound-player';
 import { navigate } from '../helpers/NavigationUtil';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentPositions } from '../redux/reducers/gameSelectors';
-import { resetGame } from '../redux/reducers/gameSlice';
+import { resetGame, setEntryFee } from '../redux/reducers/gameSlice';
 import api from '../helpers/api';
 import { Colors } from '../constants/Colors';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon 
 } from 'react-native-heroicons/solid';
 import VsCpuModal from '../components/VsCpuModal';
+import CoinSelectionModal from '../components/CoinSelectionModal';
+import Toast from 'react-native-toast-message';
 
 const AVATARS = {
   UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon
@@ -34,9 +36,11 @@ const AVATARS = {
 
 const HomeScreen = () => {
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const currentPosition = useSelector(selectCurrentPositions);
   const isFocused = useIsFocused();
   const [vsCpuModalVisible, setVsCpuModalVisible] = useState(false);
+  const [coinModalVisible, setCoinModalVisible] = useState(false);
   
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -46,6 +50,24 @@ const HomeScreen = () => {
     },
     enabled: isFocused,
   });
+
+  const updateCoinsMutation = useMutation({
+    mutationFn: async (newCoins) => {
+      const res = await api.put('/auth/me', { coins: newCoins });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['user'], data.user);
+    },
+    onError: () => {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to update coins. Please try again.',
+      });
+    },
+  });
+
   const witchAnim = useRef(new Animated.Value(-deviceWidth)).current;
   const scaleXAnim = useRef(new Animated.Value(-1)).current;
 
@@ -123,22 +145,36 @@ const HomeScreen = () => {
     [],
   );
 
-  const startGame = async (isNew = false) => {
-    SoundPlayer.stop();
-    if (isNew) {
-      dispatch(resetGame());
+  const handleStartGameWithCoins = async (entryFee) => {
+    // Check if we have user
+    if (!user) {
+      Toast.show({
+        type: 'error',
+        text1: 'Not logged in',
+        text2: 'Please login to play.',
+      });
+      return;
     }
-    navigate('LudoBoardScreen');
-    playSound('game_start');
+
+    try {
+      // Deduct coins
+      await updateCoinsMutation.mutateAsync(user.coins - entryFee);
+      
+      setCoinModalVisible(false);
+      SoundPlayer.stop();
+      dispatch(resetGame());
+      dispatch(setEntryFee({ entryFee, prizeMoney: entryFee * 4 })); // 4 players prize logic
+      navigate('LudoBoardScreen');
+      playSound('game_start');
+    } catch (e) {
+      // error handled in mutation
+    }
   };
 
-  const handleNewGamePress = useCallback(() => {
-    startGame(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleResumePress = useCallback(() => {
-    startGame();
+    SoundPlayer.stop();
+    navigate('LudoBoardScreen');
+    playSound('game_start');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -146,12 +182,21 @@ const HomeScreen = () => {
 
   return (
     <Wrapper style={styles.mainContainer}>
-      <Pressable 
-        style={styles.profileButton} 
-        onPress={() => navigate('ProfileScreen')}
-      >
-        <SelectedIcon size={40} color={Colors.yellow || '#FBBF24'} />
-      </Pressable>
+      {/* Profile and Balance Section */}
+      <View style={styles.topBar}>
+        <Pressable 
+          style={styles.profileButton} 
+          onPress={() => navigate('ProfileScreen')}
+        >
+          <SelectedIcon size={40} color={Colors.yellow || '#FBBF24'} />
+        </Pressable>
+        {user && (
+          <View style={styles.balanceBadge}>
+            <Text style={styles.balanceIcon}>💰</Text>
+            <Text style={styles.balanceText}>{user.coins || 0}</Text>
+          </View>
+        )}
+      </View>
 
       <View style={styles.imgContainer}>
         <Image source={Logo} style={styles.img} />
@@ -159,7 +204,10 @@ const HomeScreen = () => {
 
       {currentPosition.length !== 0 &&
         renderButton('RESUME', handleResumePress)}
-      {renderButton('NEW GAME', handleNewGamePress)}
+      {renderButton('NEW GAME', () => {
+        playSound('ui');
+        setCoinModalVisible(true);
+      })}
       {renderButton('VS CPU', () => {
         playSound('ui');
         setVsCpuModalVisible(true);
@@ -169,6 +217,14 @@ const HomeScreen = () => {
       <VsCpuModal
         visible={vsCpuModalVisible}
         onPressHide={() => setVsCpuModalVisible(false)}
+      />
+
+      <CoinSelectionModal
+        visible={coinModalVisible}
+        onPressHide={() => setCoinModalVisible(false)}
+        onPlay={handleStartGameWithCoins}
+        userBalance={user?.coins || 0}
+        isLoading={updateCoinsMutation.isPending}
       />
 
       <Animated.View
@@ -203,27 +259,52 @@ const styles = StyleSheet.create({
   mainContainer: {
     justifyContent: 'flex-start',
   },
+  topBar: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    right: 20,
+    zIndex: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  profileButton: {
+    padding: 5,
+  },
+  balanceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FBBF24',
+  },
+  balanceIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  balanceText: {
+    color: '#FBBF24',
+    fontWeight: '700',
+    fontSize: 16,
+  },
   imgContainer: {
     width: deviceWidth * 0.6,
     height: deviceHeight * 0.12,
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: 40,
+    marginTop: 100, // pushed down to make room for top bar
     alignSelf: 'center',
-  },
-  profileButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    zIndex: 10,
-    padding: 5,
   },
   img: {
     width: '100%',
     height: '100%',
     resizeMode: 'contain',
   },
-
   artist: {
     position: 'absolute',
     bottom: 40,

@@ -81,6 +81,10 @@ export const gameSlice = createSlice({
     setGameMode: (state, action) => {
       state.gameMode = action.payload;
     },
+    setEntryFee: (state, action) => {
+      state.entryFee = action.payload.entryFee;
+      state.prizeMoney = action.payload.prizeMoney;
+    },
   },
 });
 
@@ -97,6 +101,7 @@ export const {
   disableTouch,
   setCpuPlayers,
   setGameMode,
+  setEntryFee,
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

@@ -80,7 +80,7 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
 
   const handleDicePress = async () => {
     const newDiceNo = Math.floor(Math.random() * 6) + 1;
-    // const newDiceNo = 1
+    // const newDiceNo = 2
     playSound('dice_roll');
     setDiceRolling(true);
     await delay(800);
