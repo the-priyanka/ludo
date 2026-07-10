@@ -48,4 +48,8 @@ export const initialState = {
   turnKey: 0,                  // increments on every turn change (even same player after 6)
   entryFee: 0,
   prizeMoney: 0,
+  // Online Multiplayer state
+  roomId: null,
+  localPlayerNo: 1,            // The player number representing this device
+  onlineOpponents: [],         // E.g., [2] for a 2 player online game where we are P1
 };

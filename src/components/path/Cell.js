@@ -8,6 +8,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { RFValue } from 'react-native-responsive-fontsize';
 import Pile from '../Pile';
 import { handleForwardThunk } from '../../redux/reducers/gameAction';
+import socketService from '../../helpers/socketService';
 
 const Cell = ({ id, color, index }) => {
   const dispatch = useDispatch();
@@ -23,9 +24,21 @@ const Cell = ({ id, color, index }) => {
   );
 
 
+  const gameMode = useSelector(state => state.game.gameMode);
+  const localPlayerNo = useSelector(state => state.game.localPlayerNo);
+  const roomId = useSelector(state => state.game.roomId);
+  const currentPlayerChance = useSelector(state => state.game.chancePlayer);
+
+  const isOnlineTurn = gameMode === 'ONLINE_MULTIPLAYER' && currentPlayerChance === localPlayerNo;
+  const isOpponentTurnOnline = gameMode === 'ONLINE_MULTIPLAYER' && localPlayerNo !== currentPlayerChance;
+
+
   const handlePress = useCallback((playerNo, pieceId) => {
+    if (gameMode === 'ONLINE_MULTIPLAYER') {
+      socketService.emitGameAction('move_piece', { playerNo, pieceId, id }, roomId);
+    }
     dispatch(handleForwardThunk(playerNo, pieceId, id))
-  }, [dispatch, id]);
+  }, [dispatch, id, gameMode, roomId]);
   return (
     <View
       style={ [
@@ -107,6 +120,7 @@ const Cell = ({ id, color, index }) => {
               onPress={ () => handlePress(playerNo, piece.id) }
               pieceId={ piece.id }
               color={ pieceColor }
+              disabled={isOpponentTurnOnline}
             />
           </View>
         );

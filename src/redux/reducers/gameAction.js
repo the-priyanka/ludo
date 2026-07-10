@@ -1,6 +1,6 @@
 import { SafeSpots, StarSpots, startingPoints, turningPoints, victoryStart } from "../../helpers/PlotData";
 import { selectCurrentPositions, selectDiceNo } from "./gameSelectors";
-import { announceWinner, disableTouch, unfreezeDice, updateFireworks, updatePlayerChance, updatePlayerPieceValue } from "./gameSlice";
+import { announceWinner, disableTouch, unfreezeDice, updateDiceNo, updateFireworks, updatePlayerChance, updatePlayerPieceValue } from "./gameSlice";
 import { playSound } from '../../helpers/SoundUtility';
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
@@ -14,6 +14,71 @@ function checkWinningCriteria(pieces) {
   }
   return true; // if all piece have travelCount >= 57, return true
 }
+
+export const handleDiceRollThunk = (newDiceNo, player) => async (dispatch, getState) => {
+  const state = getState();
+  const playerPieces = state.game[`player${ player }`];
+  const activePlayersList = state.game.activePlayersList || [1,2,3,4];
+
+  dispatch(updateDiceNo({ diceNo: newDiceNo }));
+
+  const isAnyPieceAlive = playerPieces?.findIndex(i => i.pos !== 0 && i.pos !== 57);
+  const isAnyPieceLocked = playerPieces?.findIndex(i => i.pos === 0);
+
+  const getNextChance = (current) => {
+    const idx = activePlayersList.indexOf(current);
+    if (idx === -1) return activePlayersList[0];
+    return activePlayersList[(idx + 1) % activePlayersList.length];
+  };
+
+  if (isAnyPieceAlive === -1) {
+    if (newDiceNo === 6) {
+      // dispatch(enablePileSelection({ playerNo: player })); // Not needed for opponent, they will emit their move
+    } else {
+      await delay(600);
+      dispatch(updatePlayerChance({ chancePlayer: getNextChance(player) }));
+    }
+  } else {
+    const canMove = playerPieces.some(
+      pile => pile.travelCount + newDiceNo <= 57 && pile.pos !== 0,
+    );
+
+    if (
+      (!canMove && newDiceNo === 6 && isAnyPieceLocked === -1) ||
+      (!canMove && newDiceNo !== 6 && isAnyPieceLocked !== -1) ||
+      (!canMove && newDiceNo !== 6 && isAnyPieceLocked === -1)
+    ) {
+      await delay(600);
+      dispatch(updatePlayerChance({ chancePlayer: getNextChance(player) }));
+      return;
+    }
+
+    if (newDiceNo === 6) {
+      // dispatch(enablePileSelection({ playerNo: player })); // Not needed for opponent
+    }
+    // dispatch(enableCellSelection({ playerNo: player })); // Not needed for opponent
+  }
+}
+
+export const handleMoveFromPocketThunk = (value) => async (dispatch) => {
+  let playerNo = value?.id?.slice(0, 1);
+  switch (playerNo) {
+    case 'A': playerNo = 'player1'; break;
+    case 'B': playerNo = 'player2'; break;
+    case 'C': playerNo = 'player3'; break;
+    default: playerNo = 'player4'; break;
+  }
+  dispatch(
+    updatePlayerPieceValue({
+      playerNo: playerNo,
+      pieceId: value.id,
+      pos: startingPoints[parseInt(playerNo.match(/\d+/)[0], 10) - 1],
+      travelCount: 1,
+    }),
+  );
+  dispatch(unfreezeDice());
+};
+
 
 // Get next player from the active players list (supports non-contiguous players like [1,3])
 function getNextPlayer(currentPlayer, activePlayersList) {

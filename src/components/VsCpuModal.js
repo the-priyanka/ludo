@@ -13,6 +13,10 @@ import { resetGame, setCpuPlayers, setGameMode } from '../redux/reducers/gameSli
 import { playSound } from '../helpers/SoundUtility';
 import { navigate } from '../helpers/NavigationUtil';
 
+const PlayerDot = ({ color }) => (
+  <View style={ [styles.playerDot, { backgroundColor: color }] } />
+);
+
 const VsCpuModal = ({ visible, onPressHide }) => {
   const dispatch = useDispatch();
   const [selectedPlayers, setSelectedPlayers] = useState(2);
@@ -62,10 +66,6 @@ const VsCpuModal = ({ visible, onPressHide }) => {
       playSound('game_start');
     },
     [dispatch, onPressHide]
-  );
-
-  const PlayerDot = ({ color }) => (
-    <View style={ [styles.playerDot, { backgroundColor: color }] } />
   );
 
   return (

@@ -16,6 +16,7 @@ import {
   selectActivePlayersList,
   selectCpuPlayers,
 } from '../redux/reducers/gameSelectors';
+import socketService from '../helpers/socketService';
 import { BackgroundImage } from '../helpers/GetIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import LottieView from 'lottie-react-native';
@@ -44,6 +45,13 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
   const playerPieces = useSelector(
     state => state.game[`player${ currentPlayerChance }`],
   );
+  
+  const gameMode = useSelector(state => state.game.gameMode);
+  const localPlayerNo = useSelector(state => state.game.localPlayerNo);
+  const roomId = useSelector(state => state.game.roomId);
+
+  const isOnlineTurn = gameMode === 'ONLINE_MULTIPLAYER' && currentPlayerChance === player;
+  const isOpponentTurnOnline = isOnlineTurn && localPlayerNo !== player;
 
   console.log("cpuPlayers---->", cpuPlayers)
 
@@ -83,6 +91,11 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
     // const newDiceNo = 2
     playSound('dice_roll');
     setDiceRolling(true);
+    
+    if (gameMode === 'ONLINE_MULTIPLAYER') {
+      socketService.emitGameAction('roll_dice', { newDiceNo, player }, roomId);
+    }
+    
     await delay(800);
     dispatch(updateDiceNo({ diceNo: newDiceNo }));
     setDiceRolling(false);
@@ -157,8 +170,8 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
                     <>
                       { diceRolling ? null : (
                         <TouchableOpacity
-                          disabled={ isDiceRolled || isCpuTurn }
-                          activeOpacity={ isCpuTurn ? 1 : 0.4 }
+                          disabled={ isDiceRolled || isCpuTurn || isOpponentTurnOnline }
+                          activeOpacity={ (isCpuTurn || isOpponentTurnOnline) ? 1 : 0.4 }
                           onPress={ handleDicePress }
                         >
                           <Image source={ diceIcon } style={ styles.dice } />

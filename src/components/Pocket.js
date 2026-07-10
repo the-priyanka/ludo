@@ -8,9 +8,19 @@ import {
   unfreezeDice,
   updatePlayerPieceValue,
 } from '../redux/reducers/gameSlice';
+import socketService from '../helpers/socketService';
+import { useSelector } from 'react-redux';
 
 const Pocket = ({ color, player, data, isPileEnable }) => {
   const dispatch = useDispatch();
+  
+  const gameMode = useSelector(state => state.game.gameMode);
+  const localPlayerNo = useSelector(state => state.game.localPlayerNo);
+  const roomId = useSelector(state => state.game.roomId);
+  const currentPlayerChance = useSelector(state => state.game.chancePlayer);
+
+  const isOnlineTurn = gameMode === 'ONLINE_MULTIPLAYER' && currentPlayerChance === player;
+  const isOpponentTurnOnline = gameMode === 'ONLINE_MULTIPLAYER' && localPlayerNo !== player;
 
   const handlePress = async value => {
     let playerNo = value?.id?.slice(0, 1);
@@ -40,6 +50,10 @@ const Pocket = ({ color, player, data, isPileEnable }) => {
       }),
     );
 
+    if (gameMode === 'ONLINE_MULTIPLAYER') {
+      socketService.emitGameAction('move_from_pocket', { value }, roomId);
+    }
+
     dispatch(unfreezeDice());
   };
   return (
@@ -53,6 +67,7 @@ const Pocket = ({ color, player, data, isPileEnable }) => {
             data={ data }
             handlePress={ handlePress }
             isPileEnable={ isPileEnable }
+            isOpponentTurnOnline={isOpponentTurnOnline}
           />
           <Plot
             pieceNo={ 1 }
@@ -61,6 +76,7 @@ const Pocket = ({ color, player, data, isPileEnable }) => {
             data={ data }
             handlePress={ handlePress }
             isPileEnable={ isPileEnable }
+            isOpponentTurnOnline={isOpponentTurnOnline}
           />
         </View>
         <View style={ [styles.flexRow, { marginTop: 20 }] }>
@@ -71,6 +87,7 @@ const Pocket = ({ color, player, data, isPileEnable }) => {
             data={ data }
             handlePress={ handlePress }
             isPileEnable={ isPileEnable }
+            isOpponentTurnOnline={isOpponentTurnOnline}
           />
           <Plot
             pieceNo={ 3 }
@@ -79,6 +96,7 @@ const Pocket = ({ color, player, data, isPileEnable }) => {
             data={ data }
             handlePress={ handlePress }
             isPileEnable={ isPileEnable }
+            isOpponentTurnOnline={isOpponentTurnOnline}
           />
         </View>
       </View>
@@ -86,7 +104,7 @@ const Pocket = ({ color, player, data, isPileEnable }) => {
   );
 };
 
-const Plot = ({ pieceNo, player, data, handlePress, color, isPileEnable = true }) => {
+const Plot = ({ pieceNo, player, data, handlePress, color, isPileEnable = true, isOpponentTurnOnline }) => {
   return (
     <View style={ [styles.plot, { backgroundColor: color }] }>
       { isPileEnable && data && data[pieceNo]?.pos === 0 && (
@@ -94,6 +112,7 @@ const Plot = ({ pieceNo, player, data, handlePress, color, isPileEnable = true }
           pieceId={ data[pieceNo]?.id }
           player={ player }
           color={ color }
+          disabled={isOpponentTurnOnline}
           onPress={ () => handlePress(data[pieceNo]) }
         />
       ) }

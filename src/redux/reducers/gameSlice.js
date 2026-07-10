@@ -85,6 +85,16 @@ export const gameSlice = createSlice({
       state.entryFee = action.payload.entryFee;
       state.prizeMoney = action.payload.prizeMoney;
     },
+    // Online Multiplayer reducers
+    setRoomId: (state, action) => {
+      state.roomId = action.payload;
+    },
+    setLocalPlayerNo: (state, action) => {
+      state.localPlayerNo = action.payload;
+    },
+    setOnlineOpponents: (state, action) => {
+      state.onlineOpponents = action.payload;
+    },
   },
 });
 
@@ -102,6 +112,9 @@ export const {
   setCpuPlayers,
   setGameMode,
   setEntryFee,
+  setRoomId,
+  setLocalPlayerNo,
+  setOnlineOpponents,
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

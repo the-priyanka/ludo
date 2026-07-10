@@ -28,6 +28,7 @@ import {
 } from 'react-native-heroicons/solid';
 import VsCpuModal from '../components/VsCpuModal';
 import CoinSelectionModal from '../components/CoinSelectionModal';
+import OnlineMatchmakingModal from '../components/OnlineMatchmakingModal';
 import Toast from 'react-native-toast-message';
 
 const AVATARS = {
@@ -41,6 +42,7 @@ const HomeScreen = () => {
   const isFocused = useIsFocused();
   const [vsCpuModalVisible, setVsCpuModalVisible] = useState(false);
   const [coinModalVisible, setCoinModalVisible] = useState(false);
+  const [onlineModalVisible, setOnlineModalVisible] = useState(false);
   
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -175,7 +177,7 @@ const HomeScreen = () => {
     SoundPlayer.stop();
     navigate('LudoBoardScreen');
     playSound('game_start');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const SelectedIcon = AVATARS[user?.avatar] || UserCircleIcon;
@@ -212,7 +214,10 @@ const HomeScreen = () => {
         playSound('ui');
         setVsCpuModalVisible(true);
       })}
-      {renderButton('2 VS 2', () => {})}
+      {renderButton('PLAY ONLINE', () => {
+        playSound('ui');
+        setOnlineModalVisible(true);
+      })}
 
       <VsCpuModal
         visible={vsCpuModalVisible}
@@ -225,6 +230,25 @@ const HomeScreen = () => {
         onPlay={handleStartGameWithCoins}
         userBalance={user?.coins || 0}
         isLoading={updateCoinsMutation.isPending}
+      />
+
+      <OnlineMatchmakingModal
+        visible={onlineModalVisible}
+        onPressHide={() => setOnlineModalVisible(false)}
+        onMatchFound={(roomState) => {
+           setOnlineModalVisible(false);
+           SoundPlayer.stop();
+           dispatch(resetGame());
+           dispatch(setEntryFee({ entryFee: 0, prizeMoney: 0 })); // Simplified for now
+           dispatch({ type: 'game/setGameMode', payload: 'ONLINE_MULTIPLAYER' });
+           dispatch({ type: 'game/setRoomId', payload: roomState.roomId });
+           // we need to know which player number we are
+           const myPlayerInfo = roomState.players.find(p => p.id === require('../helpers/socketService').default.socket.id);
+           dispatch({ type: 'game/setLocalPlayerNo', payload: myPlayerInfo ? myPlayerInfo.playerNo : 1 });
+           
+           navigate('LudoBoardScreen');
+           playSound('game_start');
+        }}
       />
 
       <Animated.View

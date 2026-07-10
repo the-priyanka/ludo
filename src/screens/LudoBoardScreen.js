@@ -40,6 +40,9 @@ import {
 import FourTriangles from '../components/FourTriangles';
 import HorizontalPath from '../components/path/HorizontalPath.js';
 import { handleCpuTurn } from '../helpers/cpuPlayer';
+import socketService from '../helpers/socketService';
+import { handleDiceRollThunk, handleForwardThunk, handleMoveFromPocketThunk } from '../redux/reducers/gameAction';
+import Toast from 'react-native-toast-message';
 
 const LudoBoardScreen = () => {
   const dispatch = useDispatch();
@@ -54,6 +57,7 @@ const LudoBoardScreen = () => {
   const activePlayers = useSelector(selectActivePlayers);
   const turnKey = useSelector(selectTurnKey);
   const isDiceRolled = useSelector(selectDiceRolled);
+  const gameMode = useSelector(state => state.game.gameMode);
 
   const isFocused = useIsFocused();
   const opacity = useRef(new Animated.Value(1)).current;
@@ -81,6 +85,37 @@ const LudoBoardScreen = () => {
     // turnKey changes every updatePlayerChance — even when same player rolls 6 again
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turnKey, chancePlayer, cpuPlayers, winner, isFocused]);
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // ── ONLINE MULTIPLAYER: Socket Listeners ────────────────────────────────────
+  useEffect(() => {
+    if (gameMode === 'ONLINE_MULTIPLAYER') {
+      socketService.onGameAction((data) => {
+        const { actionType, payload } = data;
+        if (actionType === 'roll_dice') {
+          dispatch(handleDiceRollThunk(payload.newDiceNo, payload.player));
+        } else if (actionType === 'move_piece') {
+          dispatch(handleForwardThunk(payload.playerNo, payload.pieceId, payload.id));
+        } else if (actionType === 'move_from_pocket') {
+          dispatch(handleMoveFromPocketThunk(payload.value));
+        }
+      });
+
+      socketService.onPlayerDisconnected((data) => {
+        Toast.show({
+          type: 'info',
+          text1: 'Opponent Disconnected',
+          text2: 'You win by forfeit!',
+        });
+        // Simplistic forfeit win for now
+        dispatch({ type: 'game/announceWinner', payload: chancePlayer });
+      });
+
+      return () => {
+        socketService.offGameAction();
+      };
+    }
+  }, [gameMode, dispatch, chancePlayer]);
   // ────────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
