@@ -13,3 +13,9 @@ export const selectPocketPileSelection = state =>
 export const selectCellSelection = state => state.game.cellSelectionPlayer;
 export const selectDiceTouch = state => state.game.touchDiceBlock;
 export const selectFireworks = state => state.game.fireworks;
+
+// VS CPU selectors
+export const selectCpuPlayers = state => state.game.cpuPlayers;
+export const selectGameMode = state => state.game.gameMode;
+export const selectActivePlayers = state => state.game.activePlayers;
+export const selectTurnKey = state => state.game.turnKey;

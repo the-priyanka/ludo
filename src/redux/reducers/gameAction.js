@@ -15,16 +15,32 @@ function checkWinningCriteria(pieces) {
   return true; // if all piece have travelCount >= 57, return true
 }
 
+// Get next player considering activePlayers count
+function getNextPlayer(currentPlayer, activePlayers) {
+  let next = currentPlayer + 1;
+  if (next > activePlayers) {
+    next = 1;
+  }
+  return next;
+}
+
 export const handleForwardThunk = (playerNo, id, pos) => async (dispatch, getState) => {
   const state = getState();
   const plottedPieces = selectCurrentPositions(state);
   const diceNo = selectDiceNo(state);
+  const activePlayers = state.game.activePlayers || 4;
 
   const piecesAtPosition = plottedPieces?.filter((item) => item.pos === pos);
 
   let alpha = playerNo === 1 ? "A" : playerNo === 2 ? "B" : playerNo === 3 ? "C" : "D";
 
   const piece = piecesAtPosition[piecesAtPosition.findIndex(item => item.id.slice(0, 1) === alpha)]
+
+  // Safety guard — piece not found in currentPositions (e.g. still at home pos=0)
+  if (!piece) {
+    dispatch(unfreezeDice());
+    return;
+  }
 
   dispatch(disableTouch())
   let finalPath = piece.pos;
@@ -139,10 +155,7 @@ export const handleForwardThunk = (playerNo, id, pos) => async (dispatch, getSta
 
     }
   } else {
-    let chancePlayer = playerNo + 1;
-    if (chancePlayer > 4) {
-      chancePlayer = 1
-    }
+    const chancePlayer = getNextPlayer(playerNo, activePlayers);
     dispatch(updatePlayerChance({ chancePlayer }))
   }
 }

@@ -13,13 +13,18 @@ import { playSound } from '../helpers/SoundUtility';
 import MenuModel from '../components/MenuModel.js';
 import StartGame from '../assets/images/start.png';
 import { useIsFocused } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   selectDiceTouch,
   selectPlayer1,
   selectPlayer2,
   selectPlayer3,
   selectPlayer4,
+  selectCurrentPlayerChance,
+  selectCpuPlayers,
+  selectActivePlayers,
+  selectTurnKey,
+  selectDiceRolled,
 } from '../redux/reducers/gameSelectors';
 import WinModal from '../components/WinModal';
 import Dice from '../components/Dice';
@@ -34,14 +39,21 @@ import {
 } from '../helpers/PlotData';
 import FourTriangles from '../components/FourTriangles';
 import HorizontalPath from '../components/path/HorizontalPath.js';
+import { handleCpuTurn } from '../helpers/cpuPlayer';
 
 const LudoBoardScreen = () => {
+  const dispatch = useDispatch();
   const player1 = useSelector(selectPlayer1);
   const player2 = useSelector(selectPlayer2);
   const player3 = useSelector(selectPlayer3);
   const player4 = useSelector(selectPlayer4);
   const isDiceTouch = useSelector(selectDiceTouch);
   const winner = useSelector(state => state.game.winner);
+  const chancePlayer = useSelector(selectCurrentPlayerChance);
+  const cpuPlayers = useSelector(selectCpuPlayers);
+  const activePlayers = useSelector(selectActivePlayers);
+  const turnKey = useSelector(selectTurnKey);
+  const isDiceRolled = useSelector(selectDiceRolled);
 
   const isFocused = useIsFocused();
   const opacity = useRef(new Animated.Value(1)).current;
@@ -53,6 +65,23 @@ const LudoBoardScreen = () => {
     playSound('ui');
     setMenuVisible(true);
   }, []);
+
+  // ── VS CPU: auto-trigger CPU turns ──────────────────────────────────────────
+  useEffect(() => {
+    if (
+      cpuPlayers.length > 0 &&
+      cpuPlayers.includes(chancePlayer) &&
+      winner === null &&
+      isFocused &&
+      !isDiceRolled &&   // don't fire while dice is already rolled this turn
+      !isDiceTouch       // don't fire while pieces are animating
+    ) {
+      dispatch(handleCpuTurn(chancePlayer));
+    }
+  // turnKey changes every updatePlayerChance — even when same player rolls 6 again
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turnKey, chancePlayer, cpuPlayers, winner, isFocused]);
+  // ────────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!isFocused) {
@@ -128,7 +157,7 @@ const LudoBoardScreen = () => {
           style={ styles.flexRow }
           pointerEvents={ isDiceTouch ? 'none' : 'auto' }
         >
-          <Dice color={ Colors.green } player={ 1 } data={ player1 } />
+          <Dice color={ Colors.red } player={ 1 } data={ player1 } />
           <Dice color={ Colors.blue } rotate player={ 4 } data={ player4 } />
         </View>
       </View>

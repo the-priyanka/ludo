@@ -12,6 +12,7 @@ import {
   selectCurrentPlayerChance,
   selectDiceNo,
   selectDiceRolled,
+  selectActivePlayers,
 } from '../redux/reducers/gameSelectors';
 import { BackgroundImage } from '../helpers/GetIcons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -31,6 +32,7 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
   const currentPlayerChance = useSelector(selectCurrentPlayerChance);
   const isDiceRolled = useSelector(selectDiceRolled);
   const diceNo = useSelector(selectDiceNo);
+  const activePlayers = useSelector(selectActivePlayers);
 
   const playerPieces = useSelector(
     state => state.game[`player${ currentPlayerChance }`],
@@ -69,7 +71,7 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
 
   const handleDicePress = async () => {
     const newDiceNo = Math.floor(Math.random() * 6) + 1;
-    // const newDiceNo = 3
+    // const newDiceNo = 1
     playSound('dice_roll');
     setDiceRolling(true);
     await delay(800);
@@ -79,16 +81,18 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
     const isAnyPieceAlive = data?.findIndex(i => i.pos !== 0 && i.pos !== 57);
     const isAnyPieceLocked = data?.findIndex(i => i.pos === 0);
 
+    const getNextChance = (current) => {
+      let next = current + 1;
+      if (next > activePlayers) next = 1;
+      return next;
+    };
+
     if (isAnyPieceAlive === -1) {
       if (newDiceNo === 6) {
         dispatch(enablePileSelection({ playerNo: player }));
       } else {
-        let chancePlayer = player + 1;
-        if (chancePlayer > 4) {
-          chancePlayer = 1;
-        }
         await delay(600);
-        dispatch(updatePlayerChance({ chancePlayer: chancePlayer }));
+        dispatch(updatePlayerChance({ chancePlayer: getNextChance(player) }));
       }
     } else {
       const canMove = playerPieces.some(
@@ -100,14 +104,8 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
         (!canMove && newDiceNo !== 6 && isAnyPieceLocked !== -1) ||
         (!canMove && newDiceNo !== 6 && isAnyPieceLocked === -1)
       ) {
-        let chancePlayer = player + 1;
-
-        if (chancePlayer > 4) {
-          chancePlayer = 1;
-        }
-
         await delay(600);
-        dispatch(updatePlayerChance({ chancePlayer: chancePlayer }));
+        dispatch(updatePlayerChance({ chancePlayer: getNextChance(player) }));
         return;
       }
 

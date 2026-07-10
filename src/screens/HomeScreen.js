@@ -3,7 +3,6 @@ import {
   Text,
   StyleSheet,
   Image,
-  Alert,
   Animated,
   Pressable,
 } from 'react-native';
@@ -27,6 +26,7 @@ import { useQuery } from '@tanstack/react-query';
 import { 
   UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon 
 } from 'react-native-heroicons/solid';
+import VsCpuModal from '../components/VsCpuModal';
 
 const AVATARS = {
   UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon
@@ -36,6 +36,7 @@ const HomeScreen = () => {
   const dispatch = useDispatch();
   const currentPosition = useSelector(selectCurrentPositions);
   const isFocused = useIsFocused();
+  const [vsCpuModalVisible, setVsCpuModalVisible] = useState(false);
   
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -159,8 +160,16 @@ const HomeScreen = () => {
       {currentPosition.length !== 0 &&
         renderButton('RESUME', handleResumePress)}
       {renderButton('NEW GAME', handleNewGamePress)}
-      {renderButton('VS CPU', () => Alert.alert('VS CPU'))}
-      {renderButton('2 VS 2', () => Alert.alert('2 VS 2'))}
+      {renderButton('VS CPU', () => {
+        playSound('ui');
+        setVsCpuModalVisible(true);
+      })}
+      {renderButton('2 VS 2', () => {})}
+
+      <VsCpuModal
+        visible={vsCpuModalVisible}
+        onPressHide={() => setVsCpuModalVisible(false)}
+      />
 
       <Animated.View
         style={[

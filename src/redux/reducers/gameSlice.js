@@ -24,6 +24,7 @@ export const gameSlice = createSlice({
       state.chancePlayer = action.payload.chancePlayer;
       state.touchDiceBlock = false;
       state.isDiceRolled = false;
+      state.turnKey = (state.turnKey || 0) + 1; // always increments, even for same player
     },
     enableCellSelection: (state, action) => {
       state.touchDiceBlock = true;
@@ -70,6 +71,15 @@ export const gameSlice = createSlice({
         }
       }
     },
+
+    // VS CPU mode reducers
+    setCpuPlayers: (state, action) => {
+      state.cpuPlayers = action.payload.cpuPlayers;
+      state.activePlayers = action.payload.activePlayers;
+    },
+    setGameMode: (state, action) => {
+      state.gameMode = action.payload;
+    },
   },
 });
 
@@ -83,7 +93,9 @@ export const {
   enableCellSelection,
   updatePlayerPieceValue,
   unfreezeDice,
-  disableTouch
+  disableTouch,
+  setCpuPlayers,
+  setGameMode,
 } = gameSlice.actions;
 
 export default gameSlice.reducer;
