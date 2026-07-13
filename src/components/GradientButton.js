@@ -7,41 +7,41 @@ import { playSound } from '../helpers/SoundUtility';
 const iconsSize = RFValue(18);
 const GradientButton = ({ title, onPress, iconColor = '#d5be3e' }) => {
   return (
-    <View style={styles.mainContainer}>
+    <View style={ styles.mainContainer }>
       <TouchableOpacity
-        style={styles.btnContainer}
-        onPress={() => {
+        style={ styles.btnContainer }
+        onPress={ () => {
           playSound('ui');
           onPress();
-        }}
-        activeOpacity={0.8}
+        } }
+        activeOpacity={ 0.8 }
       >
         <LinearGradient
-          colors={['#4c669f', '#3b5998', '#192f6a']}
-          style={styles.button}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          colors={ ['#4c669f', '#3b5998', '#192f6a'] }
+          style={ styles.button }
+          start={ { x: 0, y: 0 } }
+          end={ { x: 0, y: 1 } }
         >
-          {title === 'RESUME' ? (
+          { title === 'RESUME' ? (
             <MaterialIcons
               name="play-arrow"
-              size={iconsSize}
-              color={iconColor}
+              size={ iconsSize }
+              color={ iconColor }
             />
           ) : title === 'NEW GAME' ? (
             <MaterialIcons
               name="play-circle"
-              size={iconsSize}
-              color={iconColor}
+              size={ iconsSize }
+              color={ iconColor }
             />
           ) : title === 'VS CPU' ? (
-            <MaterialIcons name="airplay" size={iconsSize} color={iconColor} />
+            <MaterialIcons name="airplay" size={ iconsSize } color={ iconColor } />
           ) : title === 'HOME' ? (
-            <MaterialIcons name="home" size={iconsSize} color={iconColor} />
+            <MaterialIcons name="home" size={ iconsSize } color={ iconColor } />
           ) : (
-            <MaterialIcons name="person-4" size={iconsSize} color={iconColor} />
-          )}
-          <Text style={styles.buttonText}>{title}</Text>
+            <MaterialIcons name="person-4" size={ iconsSize } color={ iconColor } />
+          ) }
+          <Text style={ styles.buttonText }>{ title }</Text>
         </LinearGradient>
       </TouchableOpacity>
     </View>
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 1, height: 1 },
     shadowRadius: 10,
     borderColor: '#d5be3e',
-    width: 220,
+    maxWidth: 350,
   },
   buttonText: {
     color: '#fff',

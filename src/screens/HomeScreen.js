@@ -23,8 +23,8 @@ import { resetGame, setEntryFee } from '../redux/reducers/gameSlice';
 import api from '../helpers/api';
 import { Colors } from '../constants/Colors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon 
+import {
+  UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon
 } from 'react-native-heroicons/solid';
 import VsCpuModal from '../components/VsCpuModal';
 import CoinSelectionModal from '../components/CoinSelectionModal';
@@ -43,7 +43,7 @@ const HomeScreen = () => {
   const [vsCpuModalVisible, setVsCpuModalVisible] = useState(false);
   const [coinModalVisible, setCoinModalVisible] = useState(false);
   const [onlineModalVisible, setOnlineModalVisible] = useState(false);
-  
+
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {
@@ -143,7 +143,7 @@ const HomeScreen = () => {
   }, [isFocused]);
 
   const renderButton = useCallback(
-    (title, onPress) => <GradientButton title={title} onPress={onPress} />,
+    (title, onPress) => <GradientButton title={ title } onPress={ onPress } />,
     [],
   );
 
@@ -161,7 +161,7 @@ const HomeScreen = () => {
     try {
       // Deduct coins
       await updateCoinsMutation.mutateAsync(user.coins - entryFee);
-      
+
       setCoinModalVisible(false);
       SoundPlayer.stop();
       dispatch(resetGame());
@@ -177,104 +177,109 @@ const HomeScreen = () => {
     SoundPlayer.stop();
     navigate('LudoBoardScreen');
     playSound('game_start');
-     
+
   }, []);
 
   const SelectedIcon = AVATARS[user?.avatar] || UserCircleIcon;
 
   return (
-    <Wrapper style={styles.mainContainer}>
-      {/* Profile and Balance Section */}
-      <View style={styles.topBar}>
-        <Pressable 
-          style={styles.profileButton} 
-          onPress={() => navigate('ProfileScreen')}
+    <Wrapper style={ styles.mainContainer }>
+      {/* Profile and Balance Section */ }
+      <View style={ styles.topBar }>
+        <Pressable
+          style={ styles.profileButton }
+          onPress={ () => navigate('ProfileScreen') }
         >
-          <SelectedIcon size={40} color={Colors.yellow || '#FBBF24'} />
+          <SelectedIcon size={ 40 } color={ Colors.yellow || '#FBBF24' } />
         </Pressable>
-        {user && (
-          <View style={styles.balanceBadge}>
-            <Text style={styles.balanceIcon}>💰</Text>
-            <Text style={styles.balanceText}>{user.coins || 0}</Text>
+        { user && (
+          <View style={ styles.balanceBadge }>
+            <Text style={ styles.balanceIcon }>💰</Text>
+            <Text style={ styles.balanceText }>{ user.coins || 0 }</Text>
           </View>
-        )}
+        ) }
       </View>
 
-      <View style={styles.imgContainer}>
-        <Image source={Logo} style={styles.img} />
+      <View style={ styles.imgContainer }>
+        <Image source={ Logo } style={ styles.img } />
       </View>
 
-      {currentPosition.length !== 0 &&
-        renderButton('RESUME', handleResumePress)}
-      {renderButton('NEW GAME', () => {
+      { currentPosition.length !== 0 &&
+        renderButton('RESUME', handleResumePress) }
+      { renderButton('NEW GAME', () => {
         playSound('ui');
         setCoinModalVisible(true);
-      })}
-      {renderButton('VS CPU', () => {
+      }) }
+      { renderButton('VS CPU', () => {
         playSound('ui');
         setVsCpuModalVisible(true);
-      })}
-      {renderButton('PLAY ONLINE', () => {
+      }) }
+      { renderButton('PLAY ONLINE', () => {
         playSound('ui');
         setOnlineModalVisible(true);
-      })}
+      }) }
 
       <VsCpuModal
-        visible={vsCpuModalVisible}
-        onPressHide={() => setVsCpuModalVisible(false)}
+        visible={ vsCpuModalVisible }
+        onPressHide={ () => setVsCpuModalVisible(false) }
       />
 
       <CoinSelectionModal
-        visible={coinModalVisible}
-        onPressHide={() => setCoinModalVisible(false)}
-        onPlay={handleStartGameWithCoins}
-        userBalance={user?.coins || 0}
-        isLoading={updateCoinsMutation.isPending}
+        visible={ coinModalVisible }
+        onPressHide={ () => setCoinModalVisible(false) }
+        onPlay={ handleStartGameWithCoins }
+        userBalance={ user?.coins || 0 }
+        isLoading={ updateCoinsMutation.isPending }
       />
 
       <OnlineMatchmakingModal
-        visible={onlineModalVisible}
-        onPressHide={() => setOnlineModalVisible(false)}
-        onMatchFound={(roomState) => {
-           setOnlineModalVisible(false);
-           SoundPlayer.stop();
-           dispatch(resetGame());
-           dispatch(setEntryFee({ entryFee: 0, prizeMoney: 0 })); // Simplified for now
-           dispatch({ type: 'game/setGameMode', payload: 'ONLINE_MULTIPLAYER' });
-           dispatch({ type: 'game/setRoomId', payload: roomState.roomId });
-           // we need to know which player number we are
-           const myPlayerInfo = roomState.players.find(p => p.id === require('../helpers/socketService').default.socket.id);
-           dispatch({ type: 'game/setLocalPlayerNo', payload: myPlayerInfo ? myPlayerInfo.playerNo : 1 });
-           
-           navigate('LudoBoardScreen');
-           playSound('game_start');
-        }}
+        visible={ onlineModalVisible }
+        user={ user }
+        onPressHide={ () => setOnlineModalVisible(false) }
+        onMatchFound={ (roomState) => {
+          setOnlineModalVisible(false);
+          SoundPlayer.stop();
+          dispatch(resetGame());
+          dispatch(setEntryFee({ entryFee: 0, prizeMoney: 0 })); // Simplified for now
+          dispatch({ type: 'game/setGameMode', payload: 'ONLINE_MULTIPLAYER' });
+          dispatch({ type: 'game/setRoomId', payload: roomState.roomId });
+          
+          const activeList = roomState.activePlayersList || [1,2,3,4];
+          dispatch({ type: 'game/setActivePlayers', payload: { activePlayers: activeList.length, activePlayersList: activeList } });
+
+          // we need to know which player number we are
+          const myPlayerInfo = roomState.players.find(p => p.id === require('../helpers/socketService').default.socket.id);
+          dispatch({ type: 'game/setLocalPlayerNo', payload: myPlayerInfo ? myPlayerInfo.playerNo : 1 });
+
+          navigate('LudoBoardScreen');
+          playSound('game_start');
+        } }
       />
 
       <Animated.View
-        style={[
+        style={ [
           styles.witchContainer,
           {
             transform: [{ translateX: witchAnim }, { scaleX: scaleXAnim }],
           },
-        ]}
+        ] }
       >
         <Pressable
-          onPress={() => {
+          onPress={ () => {
             const random = Math.floor(Math.random() * 3) + 1;
-            playSound(`girl${random}`);
-          }}
+            playSound(`girl${ random }`);
+          } }
         >
           <LottieView
             hardwareAccelerationAndroid
-            source={Witch}
+            source={ Witch }
             autoPlay
-            speed={1}
-            style={styles.witch}
+            speed={ 1 }
+            style={ styles.witch }
           />
         </Pressable>
       </Animated.View>
-      <Text style={styles.artist}>Designed by - The Priyanka ™</Text>
+      <Text style={ styles.artist }>Designed by - The Priyanka ™</Text>
     </Wrapper>
   );
 };

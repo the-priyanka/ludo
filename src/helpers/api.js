@@ -2,8 +2,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// Use local IP for Android emulator (10.0.2.2) or localhost for iOS simulator
-const baseURL = Platform.OS === 'android' ? 'http://10.0.2.2:5001/api' : 'http://localhost:5001/api';
+// Use the live backend URL
+const baseURL = 'https://ludo-backend-vmoj.onrender.com/api';
 
 const api = axios.create({
   baseURL,
@@ -15,6 +15,7 @@ const api = axios.create({
 // Add a request interceptor to attach the JWT token if available
 api.interceptors.request.use(
   async (config) => {
+
     const token = await AsyncStorage.getItem('userToken');
     if (token) {
       config.headers.Authorization = `Bearer ${ token }`;

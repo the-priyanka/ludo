@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 
-// Replace with your backend URL when deploying. For android emulator use 10.0.2.2:5000, for iOS use localhost:5000
-const SOCKET_URL = 'http://localhost:5001'; // Using localhost for iOS simulator
+// Use the live backend URL for testing
+const SOCKET_URL = 'https://ludo-backend-vmoj.onrender.com';
 
 class SocketService {
   constructor() {
@@ -34,6 +34,12 @@ class SocketService {
   joinMatchmaking(data) {
     if (this.socket) {
       this.socket.emit('join_matchmaking', data);
+    }
+  }
+
+  leaveMatchmaking() {
+    if (this.socket) {
+      this.socket.emit('leave_matchmaking');
     }
   }
 

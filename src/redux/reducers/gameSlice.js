@@ -95,6 +95,10 @@ export const gameSlice = createSlice({
     setOnlineOpponents: (state, action) => {
       state.onlineOpponents = action.payload;
     },
+    setActivePlayers: (state, action) => {
+      state.activePlayers = action.payload.activePlayers;
+      state.activePlayersList = action.payload.activePlayersList;
+    },
   },
 });
 
@@ -115,6 +119,7 @@ export const {
   setRoomId,
   setLocalPlayerNo,
   setOnlineOpponents,
+  setActivePlayers,
 } = gameSlice.actions;
 
 export default gameSlice.reducer;
