@@ -25,6 +25,7 @@ const Pile = ({ cell, pieceId, player, color, onPress }) => {
   const currentPlayerPileSelection = useSelector(selectPocketPileSelection);
   const currentPlayerCellSelection = useSelector(selectCellSelection);
   const diceNo = useSelector(selectDiceNo);
+  const localPlayerNo = useSelector(state => state.game.localPlayerNo) || 1;
 
   const playerPieces = useSelector(state => state.game[`player${ player }`]);
 
@@ -83,9 +84,15 @@ const Pile = ({ cell, pieceId, player, color, onPress }) => {
     [rotation],
   );
 
+  const boardRotation = localPlayerNo === 1 ? 0 
+    : localPlayerNo === 2 ? -90
+    : localPlayerNo === 3 ? 180
+    : localPlayerNo === 4 ? 90
+    : 0;
+
   return (
     <TouchableOpacity
-      style={ styles.container }
+      style={ [styles.container, { transform: [{ rotate: `${-boardRotation}deg` }] }] }
       activeOpacity={ 0.5 }
       disabled={ !(cell ? isCellEnabled && isForwardable() : isPileEnabled) }
       onPress={ onPress }

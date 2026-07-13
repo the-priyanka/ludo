@@ -61,6 +61,7 @@ const LudoBoardScreen = () => {
   const player2 = useSelector(selectPlayer2);
   const player3 = useSelector(selectPlayer3);
   const player4 = useSelector(selectPlayer4);
+  const localPlayerNo = useSelector(state => state.game.localPlayerNo) || 1;
   const isDiceTouch = useSelector(selectDiceTouch);
   const winner = useSelector(state => state.game.winner);
   const chancePlayer = useSelector(selectCurrentPlayerChance);
@@ -174,6 +175,20 @@ const LudoBoardScreen = () => {
 
   const AvatarImage = user?.avatar ? AVATARS[user.avatar] || UserIcon : UserIcon;
 
+  const boardRotation = localPlayerNo === 1 ? 0 
+    : localPlayerNo === 2 ? -90
+    : localPlayerNo === 3 ? 180
+    : localPlayerNo === 4 ? 90
+    : 0;
+
+  const playersData = { 1: player1, 2: player2, 3: player3, 4: player4 };
+  const playerColors = { 1: Colors.red, 2: Colors.green, 3: Colors.yellow, 4: Colors.blue };
+
+  const TL = (localPlayerNo % 4) + 1;
+  const TR = ((localPlayerNo + 1) % 4) + 1;
+  const BR = ((localPlayerNo + 2) % 4) + 1;
+  const BL = localPlayerNo;
+
   return (
     <Wrapper>
 
@@ -186,10 +201,10 @@ const LudoBoardScreen = () => {
           style={ styles.flexRow }
           pointerEvents={ isDiceTouch ? 'none' : 'auto' }
         >
-          <Dice color={ Colors.green } player={ 2 } data={ player2 } />
-          <Dice color={ Colors.yellow } player={ 3 } rotate data={ player3 } />
+          <Dice color={ playerColors[TL] } player={ TL } data={ playersData[TL] } />
+          <Dice color={ playerColors[TR] } player={ TR } rotate data={ playersData[TR] } />
         </View>
-        <View style={ styles.ludoBoard }>
+        <View style={ [styles.ludoBoard, { transform: [{ rotate: `${boardRotation}deg` }] }] }>
           <View style={ styles.plotContainer }>
             <Pocket color={ Colors.green } player={ 2 } data={ player2 }
               isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(2) ? true : false) : true }
@@ -222,8 +237,8 @@ const LudoBoardScreen = () => {
           style={ styles.flexRow }
           pointerEvents={ isDiceTouch ? 'none' : 'auto' }
         >
-          <Dice color={ Colors.red } player={ 1 } data={ player1 } />
-          <Dice color={ Colors.blue } rotate player={ 4 } data={ player4 } />
+          <Dice color={ playerColors[BL] } player={ BL } data={ playersData[BL] } />
+          <Dice color={ playerColors[BR] } player={ BR } rotate data={ playersData[BR] } />
         </View>
       </View>
 
