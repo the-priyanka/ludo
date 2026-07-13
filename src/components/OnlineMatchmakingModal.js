@@ -17,26 +17,26 @@ import Toast from 'react-native-toast-message';
 // Profile Box Component
 const PlayerProfileBox = ({ player, isSearching }) => {
   return (
-    <View style={styles.profileBox}>
-      {player ? (
+    <View style={ styles.profileBox }>
+      { player ? (
         <>
-          <View style={styles.avatarCircle}>
-             {/* Use initials or avatar here, for now placeholder */}
-             <Text style={styles.avatarText}>{player.userData?.name ? player.userData.name.charAt(0).toUpperCase() : 'P'}</Text>
+          <View style={ styles.avatarCircle }>
+            {/* Use initials or avatar here, for now placeholder */ }
+            <Text style={ styles.avatarText }>{ player.userData?.name ? player.userData.name.charAt(0).toUpperCase() : 'P' }</Text>
           </View>
-          <Text style={styles.playerName} numberOfLines={1}>{player.userData?.name || 'Player'}</Text>
+          <Text style={ styles.playerName } numberOfLines={ 1 }>{ player.userData?.name || 'Player' }</Text>
         </>
       ) : isSearching ? (
         <>
-          <ActivityIndicator size="small" color="#E8524A" style={styles.spinner} />
-          <Text style={styles.searchingTextSmall}>Searching...</Text>
+          <ActivityIndicator size="small" color="#E8524A" style={ styles.spinner } />
+          <Text style={ styles.searchingTextSmall }>Searching...</Text>
         </>
       ) : (
         <>
-           <View style={styles.emptyAvatarCircle} />
-           <Text style={styles.emptyText}>Waiting...</Text>
+          <View style={ styles.emptyAvatarCircle } />
+          <Text style={ styles.emptyText }>Waiting...</Text>
         </>
-      )}
+      ) }
     </View>
   );
 };
@@ -77,10 +77,10 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
       socketService.onMatchFound((roomState) => {
         setIsSearching(false);
         Toast.show({ type: 'success', text1: 'Match Found!', position: 'top' });
-        
+
         // Update UI with matched players
         setMatchedPlayers(roomState.players);
-        
+
         // Wait 2 seconds before starting the game
         setTimeout(() => {
           onMatchFound(roomState);
@@ -98,20 +98,22 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
     setMode('select_players');
   }, []);
 
+  console.log("user--->", user)
+
   const handleStartSearch = useCallback((selectedCount) => {
     playSound('ui');
     setPlayerCount(selectedCount);
     setMode('searching');
     setIsSearching(true);
-    
+
     const userData = {
-      name: user?.name || 'Guest',
+      name: user?.username || 'Guest',
       avatar: user?.avatar || 'UserCircleIcon',
     };
-    
+
     // Set our own player immediately in the UI
     setMatchedPlayers([{ id: socketService.socket?.id || 'me', userData }]);
-    
+
     socketService.joinMatchmaking({ playerCount: selectedCount, userData });
   }, [user]);
 
@@ -126,7 +128,7 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
   const handleCreatePrivate = useCallback(() => {
     playSound('ui');
     setIsSearching(true);
-    socketService.createPrivateRoom({ name: user?.name || 'Player' }, (res) => {
+    socketService.createPrivateRoom({ name: user?.username || 'Player' }, (res) => {
       if (res.success) {
         setCreatedRoomId(res.roomId);
         Toast.show({ type: 'success', text1: 'Room Created!', position: 'top' });
@@ -148,135 +150,135 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
       }
     });
   }, [roomIdInput]);
-  
+
   const renderProfileBoxes = () => {
     const boxes = [];
     for (let i = 0; i < playerCount; i++) {
       const player = matchedPlayers[i];
       boxes.push(
-        <PlayerProfileBox 
-          key={i} 
-          player={player} 
-          isSearching={isSearching && !player} 
+        <PlayerProfileBox
+          key={ i }
+          player={ player }
+          isSearching={ isSearching && !player }
         />
       );
     }
-    
+
     return (
-      <View style={playerCount === 2 ? styles.profilesContainer2p : styles.profilesContainer4p}>
-        {boxes}
+      <View style={ playerCount === 2 ? styles.profilesContainer2p : styles.profilesContainer4p }>
+        { boxes }
       </View>
     );
   };
 
   return (
     <Modal
-      style={styles.modalWrapper}
-      isVisible={visible}
+      style={ styles.modalWrapper }
+      isVisible={ visible }
       backdropColor="#000"
-      backdropOpacity={0.75}
-      onBackdropPress={() => {
+      backdropOpacity={ 0.75 }
+      onBackdropPress={ () => {
         if (mode === 'searching') {
           handleCancelSearch();
         }
         onPressHide();
-      }}
+      } }
       animationIn="fadeIn"
       animationOut="fadeOut"
-      onBackButtonPress={onPressHide}
+      onBackButtonPress={ onPressHide }
     >
-      <Animated.View style={[styles.modalContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>
-            {mode === 'select_players' ? 'Select Mode' : 
-             mode === 'searching' ? 'Matchmaking' : 
-             'Online Multiplayer'}
+      <Animated.View style={ [styles.modalContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }] }>
+        <View style={ styles.header }>
+          <Text style={ styles.title }>
+            { mode === 'select_players' ? 'Select Mode' :
+              mode === 'searching' ? 'Matchmaking' :
+                'Online Multiplayer' }
           </Text>
         </View>
 
-        {mode === 'menu' && (
-          <View style={styles.menuContainer}>
-            <TouchableOpacity style={styles.menuButton} onPress={handleQuickMatch}>
-              <Text style={styles.menuButtonText}>Quick Match</Text>
+        { mode === 'menu' && (
+          <View style={ styles.menuContainer }>
+            <TouchableOpacity style={ styles.menuButton } onPress={ handleQuickMatch }>
+              <Text style={ styles.menuButtonText }>Quick Match</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.menuButton, { backgroundColor: '#4CAF50' }]} onPress={() => setMode('private')}>
-              <Text style={styles.menuButtonText}>Play with Friends</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        
-        {mode === 'select_players' && (
-          <View style={styles.menuContainer}>
-            <Text style={styles.sectionDesc}>Pick how many players are on the board</Text>
-            <TouchableOpacity style={styles.menuButton} onPress={() => handleStartSearch(2)}>
-              <Text style={styles.menuButtonText}>2 Players</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.menuButton, { backgroundColor: '#2196F3' }]} onPress={() => handleStartSearch(4)}>
-              <Text style={styles.menuButtonText}>4 Players</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.backButton} onPress={() => setMode('menu')}>
-              <Text style={styles.backButtonText}>Back</Text>
+            <TouchableOpacity style={ [styles.menuButton, { backgroundColor: '#4CAF50' }] } onPress={ () => setMode('private') }>
+              <Text style={ styles.menuButtonText }>Play with Friends</Text>
             </TouchableOpacity>
           </View>
-        )}
+        ) }
 
-        {mode === 'searching' && (
-          <View style={styles.searchingContainer}>
-            {renderProfileBoxes()}
-            
-            {matchedPlayers.length < playerCount ? (
-              <TouchableOpacity style={styles.cancelButton} onPress={handleCancelSearch}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+        { mode === 'select_players' && (
+          <View style={ styles.menuContainer }>
+            <Text style={ styles.sectionDesc }>Pick how many players are on the board</Text>
+            <TouchableOpacity style={ styles.menuButton } onPress={ () => handleStartSearch(2) }>
+              <Text style={ styles.menuButtonText }>2 Players</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={ [styles.menuButton, { backgroundColor: '#2196F3' }] } onPress={ () => handleStartSearch(4) }>
+              <Text style={ styles.menuButtonText }>4 Players</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={ styles.backButton } onPress={ () => setMode('menu') }>
+              <Text style={ styles.backButtonText }>Back</Text>
+            </TouchableOpacity>
+          </View>
+        ) }
+
+        { mode === 'searching' && (
+          <View style={ styles.searchingContainer }>
+            { renderProfileBoxes() }
+
+            { matchedPlayers.length < playerCount ? (
+              <TouchableOpacity style={ styles.cancelButton } onPress={ handleCancelSearch }>
+                <Text style={ styles.cancelButtonText }>Cancel</Text>
               </TouchableOpacity>
             ) : (
-              <Text style={styles.matchReadyText}>Match Ready! Starting...</Text>
-            )}
+              <Text style={ styles.matchReadyText }>Match Ready! Starting...</Text>
+            ) }
           </View>
-        )}
+        ) }
 
-        {mode === 'private' && (
-          <View style={styles.privateContainer}>
-            {isSearching ? (
-                <View style={styles.searchingContainer}>
-                  {createdRoomId ? (
-                    <>
-                      <Text style={styles.roomCodeLabel}>Your Room Code:</Text>
-                      <View style={styles.roomCodeContainer}>
-                        <Text style={styles.roomCodeText}>{createdRoomId}</Text>
-                      </View>
-                      <ActivityIndicator size="large" color="#E8524A" style={{ marginTop: 20 }} />
-                      <Text style={styles.searchingText}>Waiting for friend to join...</Text>
-                    </>
-                  ) : (
-                    <>
-                      <ActivityIndicator size="large" color="#E8524A" />
-                      <Text style={styles.searchingText}>Creating room...</Text>
-                    </>
-                  )}
-                </View>
+        { mode === 'private' && (
+          <View style={ styles.privateContainer }>
+            { isSearching ? (
+              <View style={ styles.searchingContainer }>
+                { createdRoomId ? (
+                  <>
+                    <Text style={ styles.roomCodeLabel }>Your Room Code:</Text>
+                    <View style={ styles.roomCodeContainer }>
+                      <Text style={ styles.roomCodeText }>{ createdRoomId }</Text>
+                    </View>
+                    <ActivityIndicator size="large" color="#E8524A" style={ { marginTop: 20 } } />
+                    <Text style={ styles.searchingText }>Waiting for friend to join...</Text>
+                  </>
+                ) : (
+                  <>
+                    <ActivityIndicator size="large" color="#E8524A" />
+                    <Text style={ styles.searchingText }>Creating room...</Text>
+                  </>
+                ) }
+              </View>
             ) : (
-                <>
-                  <TouchableOpacity style={styles.menuButton} onPress={handleCreatePrivate}>
-                    <Text style={styles.menuButtonText}>Create Room</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.orText}>- OR -</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter Room Code"
-                    placeholderTextColor="#888"
-                    value={roomIdInput}
-                    onChangeText={setRoomIdInput}
-                  />
-                  <TouchableOpacity style={[styles.menuButton, { backgroundColor: '#4CAF50' }]} onPress={handleJoinPrivate}>
-                    <Text style={styles.menuButtonText}>Join Room</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.backButton} onPress={() => setMode('menu')}>
-                    <Text style={styles.backButtonText}>Back</Text>
-                  </TouchableOpacity>
-                </>
-            )}
+              <>
+                <TouchableOpacity style={ styles.menuButton } onPress={ handleCreatePrivate }>
+                  <Text style={ styles.menuButtonText }>Create Room</Text>
+                </TouchableOpacity>
+                <Text style={ styles.orText }>- OR -</Text>
+                <TextInput
+                  style={ styles.input }
+                  placeholder="Enter Room Code"
+                  placeholderTextColor="#888"
+                  value={ roomIdInput }
+                  onChangeText={ setRoomIdInput }
+                />
+                <TouchableOpacity style={ [styles.menuButton, { backgroundColor: '#4CAF50' }] } onPress={ handleJoinPrivate }>
+                  <Text style={ styles.menuButtonText }>Join Room</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={ styles.backButton } onPress={ () => setMode('menu') }>
+                  <Text style={ styles.backButtonText }>Back</Text>
+                </TouchableOpacity>
+              </>
+            ) }
           </View>
-        )}
+        ) }
 
       </Animated.View>
     </Modal>

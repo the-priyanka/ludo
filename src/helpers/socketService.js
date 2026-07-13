@@ -1,7 +1,8 @@
 import { io } from 'socket.io-client';
+import { Platform } from 'react-native';
 
-// Use the live backend URL for testing
-const SOCKET_URL = 'https://ludo-backend-vmoj.onrender.com';
+// Use the local backend URL for testing
+const SOCKET_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5001' : 'http://localhost:5001';
 
 class SocketService {
   constructor() {
@@ -78,10 +79,10 @@ class SocketService {
       this.socket.on('player_disconnected', callback);
     }
   }
-  
+
   offGameAction() {
     if (this.socket) {
-        this.socket.off('game_action');
+      this.socket.off('game_action');
     }
   }
 }

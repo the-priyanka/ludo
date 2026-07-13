@@ -2,8 +2,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// Use the live backend URL
-const baseURL = 'https://ludo-backend-vmoj.onrender.com/api';
+// Use the local backend URL
+const baseURL = Platform.OS === 'android' ? 'http://10.0.2.2:5001/api' : 'http://localhost:5001/api';
 
 const api = axios.create({
   baseURL,

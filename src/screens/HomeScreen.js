@@ -48,10 +48,12 @@ const HomeScreen = () => {
     queryKey: ['user'],
     queryFn: async () => {
       const res = await api.get('/auth/me');
+      console.log("res", res)
       return res.data.success ? res.data.user : null;
     },
     enabled: isFocused,
   });
+
 
   const updateCoinsMutation = useMutation({
     mutationFn: async (newCoins) => {
@@ -243,8 +245,8 @@ const HomeScreen = () => {
           dispatch(setEntryFee({ entryFee: 0, prizeMoney: 0 })); // Simplified for now
           dispatch({ type: 'game/setGameMode', payload: 'ONLINE_MULTIPLAYER' });
           dispatch({ type: 'game/setRoomId', payload: roomState.roomId });
-          
-          const activeList = roomState.activePlayersList || [1,2,3,4];
+
+          const activeList = roomState.activePlayersList || [1, 2, 3, 4];
           dispatch({ type: 'game/setActivePlayers', payload: { activePlayers: activeList.length, activePlayersList: activeList } });
 
           // we need to know which player number we are

@@ -4,6 +4,7 @@ import {
   Image,
   Animated,
   View,
+  Text,
 } from 'react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { deviceHeight, deviceWidth } from '../constants/Scaling';
@@ -14,6 +15,14 @@ import MenuModel from '../components/MenuModel.js';
 import StartGame from '../assets/images/start.png';
 import { useIsFocused } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
+import {
+  UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon, UserIcon,
+} from 'react-native-heroicons/solid';
+
+const AVATARS = {
+  UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon, UserIcon,
+};
+
 import {
   selectDiceTouch,
   selectPlayer1,
@@ -43,6 +52,8 @@ import { handleCpuTurn } from '../helpers/cpuPlayer';
 import socketService from '../helpers/socketService';
 import { handleDiceRollThunk, handleForwardThunk, handleMoveFromPocketThunk } from '../redux/reducers/gameAction';
 import Toast from 'react-native-toast-message';
+import { useQuery } from '@tanstack/react-query';
+import api from '../helpers/api.js';
 
 const LudoBoardScreen = () => {
   const dispatch = useDispatch();
@@ -54,7 +65,6 @@ const LudoBoardScreen = () => {
   const winner = useSelector(state => state.game.winner);
   const chancePlayer = useSelector(selectCurrentPlayerChance);
   const cpuPlayers = useSelector(selectCpuPlayers);
-  const activePlayers = useSelector(selectActivePlayers);
   const turnKey = useSelector(selectTurnKey);
   const isDiceRolled = useSelector(selectDiceRolled);
   const gameMode = useSelector(state => state.game.gameMode);
@@ -64,6 +74,17 @@ const LudoBoardScreen = () => {
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [showStartImage, setShowStartImage] = useState(false);
+
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      console.log("res", res)
+      return res.data.success ? res.data.user : null;
+    },
+    enabled: isFocused,
+  });
+
 
   const handleMenuPress = useCallback(() => {
     playSound('ui');
@@ -116,7 +137,6 @@ const LudoBoardScreen = () => {
       };
     }
   }, [gameMode, dispatch, chancePlayer]);
-  // ────────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!isFocused) {
@@ -152,9 +172,11 @@ const LudoBoardScreen = () => {
     };
   }, [isFocused, opacity]);
 
+  const AvatarImage = user?.avatar ? AVATARS[user.avatar] || UserIcon : UserIcon;
 
   return (
     <Wrapper>
+
       <TouchableOpacity style={ styles.menuIcons } onPress={ handleMenuPress }>
         <Image source={ MenuIcons } style={ styles.menuIconImage } />
       </TouchableOpacity>
@@ -202,6 +224,16 @@ const LudoBoardScreen = () => {
         >
           <Dice color={ Colors.red } player={ 1 } data={ player1 } />
           <Dice color={ Colors.blue } rotate player={ 4 } data={ player4 } />
+        </View>
+      </View>
+
+      <View style={ styles.userProfileContainer }>
+        <View style={ styles.avatarContainer }>
+          <AvatarImage size={ 30 } color="#fff" />
+        </View>
+        <View style={ styles.userInfo }>
+          <Text style={ styles.usernameText } numberOfLines={ 1 }>{ user?.username }</Text>
+          <Text style={ styles.coinsText }>{ user?.coins } Coins</Text>
         </View>
       </View>
 
@@ -271,6 +303,33 @@ const styles = StyleSheet.create({
     height: '20%',
     justifyContent: 'space-between',
     backgroundColor: '#1E5162',
+  },
+  userProfileContainer: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  avatarContainer: {
+    marginRight: 10,
+  },
+  userInfo: {
+    justifyContent: 'center',
+  },
+  usernameText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  coinsText: {
+    color: '#ffd700',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 
