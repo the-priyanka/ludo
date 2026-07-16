@@ -21,7 +21,12 @@ const WinModal = ({ winner }) => {
   const queryClient = useQueryClient();
   const [visible, setVisible] = useState(!!winner);
   const prizeMoney = useSelector((state) => state.game.prizeMoney);
+  const localPlayerNo = useSelector((state) => state.game.localPlayerNo) || 1;
+  const gameMode = useSelector((state) => state.game.gameMode);
+  const entryFee = useSelector((state) => state.game.entryFee) || 0;
+  const activePlayersList = useSelector((state) => state.game.activePlayersList) || [1, 2, 3, 4];
   const hasCredited = useRef(false);
+  const isOnline = gameMode === 'ONLINE_MULTIPLAYER';
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -45,17 +50,24 @@ const WinModal = ({ winner }) => {
   useEffect(() => {
     setVisible(!!winner);
 
-    // Credit prize money to user if Player 1 wins
-    if (winner === 1 && prizeMoney > 0 && user && !hasCredited.current) {
+    // Credit prize money to the local player if they won
+    if (winner === localPlayerNo && prizeMoney > 0 && user && !hasCredited.current) {
       hasCredited.current = true;
       updateCoinsMutation.mutate(user.coins + prizeMoney);
     }
-  }, [winner, user, prizeMoney, updateCoinsMutation]);
+  }, [winner, user, prizeMoney, localPlayerNo, updateCoinsMutation]);
 
   const handleNewGame = () => {
-    dispatch(resetGame());
-    dispatch(announceWinner(null));
-    playSound('game_start');
+    if (isOnline) {
+      // Online: go to HomeScreen — user can find a new match there
+      dispatch(resetGame());
+      dispatch(announceWinner(null));
+      resetAndNavigate('HomeScreen');
+    } else {
+      dispatch(resetGame());
+      dispatch(announceWinner(null));
+      playSound('game_start');
+    }
   };
 
   const handleHome = () => {
@@ -63,6 +75,7 @@ const WinModal = ({ winner }) => {
     dispatch(announceWinner(null));
     resetAndNavigate('HomeScreen');
   };
+
 
   return (
     <Modal
@@ -87,6 +100,10 @@ const WinModal = ({ winner }) => {
           <Text style={ styles.congratsText }>
             🥳 Congratulations! PLAYER { winner }
           </Text>
+
+          { winner === localPlayerNo && prizeMoney > 0 && (
+            <Text style={ styles.prizeText }>💰 +{ prizeMoney.toLocaleString() } Coins!</Text>
+          ) }
 
           <LottieView
             autoPlay
@@ -153,6 +170,13 @@ const styles = StyleSheet.create({
     color: 'white',
     fontFamily: 'Philosopher-Bold',
     marginTop: 10,
+  },
+  prizeText: {
+    fontSize: 20,
+    color: '#FFD700',
+    fontWeight: '800',
+    marginTop: 6,
+    letterSpacing: 0.5,
   },
   trophyAnimation: {
     height: 200,

@@ -41,9 +41,13 @@ const PlayerProfileBox = ({ player, isSearching }) => {
   );
 };
 
-const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) => {
-  const [mode, setMode] = useState('menu'); // 'menu' | 'select_players' | 'searching' | 'private'
+const COIN_OPTIONS = [500, 1000, 2000, 5000, 10000];
+
+const OnlineMatchmakingModal = ({ visible, user, userBalance = 0, onPressHide, onMatchFound }) => {
+  const [mode, setMode] = useState('menu'); // 'menu' | 'select_players' | 'select_bet' | 'searching' | 'private'
   const [playerCount, setPlayerCount] = useState(2); // 2 or 4
+  const [selectedBet, setSelectedBet] = useState(500);
+  const entryFeeRef = useRef(0); // useRef — avoids re-triggering useEffect on fee change
   const [matchedPlayers, setMatchedPlayers] = useState([]); // players in room
   const [roomIdInput, setRoomIdInput] = useState('');
   const [createdRoomId, setCreatedRoomId] = useState('');
@@ -72,6 +76,8 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
       setIsSearching(false);
       setCreatedRoomId('');
       setMatchedPlayers([]);
+      setSelectedBet(500);
+      entryFeeRef.current = 0;
       socketService.connect();
 
       // Clean up any old listener before registering a new one
@@ -84,8 +90,9 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
         setMatchedPlayers(roomState.players);
 
         // Wait 2 seconds before starting the game
+        // Read from ref so no re-render side effect
         setTimeout(() => {
-          onMatchFound(roomState);
+          onMatchFound({ ...roomState, entryFee: entryFeeRef.current });
         }, 2000);
       });
 
@@ -95,16 +102,24 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
       // Remove listener when modal closes
       socketService.offMatchFound();
     }
-  }, [visible, onMatchFound, fadeAnim, slideAnim]);
+  // entryFeeRef is a ref — intentionally excluded from deps to prevent reset on fee change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, onMatchFound]);
 
   const handleQuickMatch = useCallback(() => {
     playSound('ui');
     setMode('select_players');
   }, []);
 
-  const handleStartSearch = useCallback((selectedCount) => {
+  const handleSelectCount = useCallback((count) => {
     playSound('ui');
-    setPlayerCount(selectedCount);
+    setPlayerCount(count);
+    setMode('select_bet');
+  }, []);
+
+  const handleStartSearch = useCallback((fee) => {
+    playSound('ui');
+    entryFeeRef.current = fee; // store in ref — does NOT trigger useEffect re-run
     setMode('searching');
     setIsSearching(true);
 
@@ -116,13 +131,13 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
     // Set our own player immediately in the UI
     setMatchedPlayers([{ id: socketService.socket?.id || 'me', userData }]);
 
-    socketService.joinMatchmaking({ playerCount: selectedCount, userData });
-  }, [user]);
+    socketService.joinMatchmaking({ playerCount, entryFee: fee, userData });
+  }, [user, playerCount]);
 
   const handleCancelSearch = useCallback(() => {
     playSound('ui');
     socketService.leaveMatchmaking();
-    setMode('select_players');
+    setMode('select_bet');
     setIsSearching(false);
     setMatchedPlayers([]);
   }, []);
@@ -193,6 +208,7 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
         <View style={ styles.header }>
           <Text style={ styles.title }>
             { mode === 'select_players' ? 'Select Mode' :
+              mode === 'select_bet' ? 'Select Entry Fee' :
               mode === 'searching' ? 'Matchmaking' :
                 'Online Multiplayer' }
           </Text>
@@ -212,10 +228,10 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
         { mode === 'select_players' && (
           <View style={ styles.menuContainer }>
             <Text style={ styles.sectionDesc }>Pick how many players are on the board</Text>
-            <TouchableOpacity style={ styles.menuButton } onPress={ () => handleStartSearch(2) }>
+            <TouchableOpacity style={ styles.menuButton } onPress={ () => handleSelectCount(2) }>
               <Text style={ styles.menuButtonText }>2 Players</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={ [styles.menuButton, { backgroundColor: '#2196F3' }] } onPress={ () => handleStartSearch(4) }>
+            <TouchableOpacity style={ [styles.menuButton, { backgroundColor: '#2196F3' }] } onPress={ () => handleSelectCount(4) }>
               <Text style={ styles.menuButtonText }>4 Players</Text>
             </TouchableOpacity>
             <TouchableOpacity style={ styles.backButton } onPress={ () => setMode('menu') }>
@@ -224,8 +240,80 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
           </View>
         ) }
 
+        { mode === 'select_bet' && (
+          <View style={ styles.betContainer }>
+            {/* Balance row */}
+            <View style={ styles.balanceRow }>
+              <Text style={ styles.balanceLabel }>💰 Your Balance</Text>
+              <Text style={ styles.balanceAmount }>{ userBalance.toLocaleString() }</Text>
+            </View>
+
+            <Text style={ styles.sectionDesc }>Choose entry fee · { playerCount } Players</Text>
+
+            {/* Coin grid */}
+            <View style={ styles.coinGrid }>
+              { COIN_OPTIONS.map((coin) => {
+                const isSelected = selectedBet === coin;
+                const canAfford = userBalance >= coin;
+                return (
+                  <TouchableOpacity
+                    key={ coin }
+                    activeOpacity={ 0.8 }
+                    onPress={ () => {
+                      playSound('ui');
+                      if (canAfford) setSelectedBet(coin);
+                    } }
+                    style={ [
+                      styles.coinOption,
+                      isSelected && styles.coinOptionSelected,
+                      !canAfford && styles.coinOptionDisabled,
+                    ] }
+                  >
+                    <Text style={ styles.coinOptionIcon }>💰</Text>
+                    <Text style={ [
+                      styles.coinOptionText,
+                      isSelected && styles.coinOptionTextSelected,
+                    ] }>
+                      { coin.toLocaleString() }
+                    </Text>
+                    { !canAfford && <Text style={ styles.insufficientLabel }>Low</Text> }
+                  </TouchableOpacity>
+                );
+              }) }
+            </View>
+
+            {/* Prize preview */}
+            <View style={ styles.prizePreviewRow }>
+              <Text style={ styles.prizePreviewLabel }>🏆 Prize Pool</Text>
+              <Text style={ styles.prizePreviewAmount }>💰 { (selectedBet * playerCount).toLocaleString() }</Text>
+            </View>
+
+            {/* Find Match button */}
+            <TouchableOpacity
+              style={ [styles.menuButton, userBalance < selectedBet && styles.menuButtonDisabled] }
+              onPress={ () => handleStartSearch(selectedBet) }
+              disabled={ userBalance < selectedBet }
+            >
+              <Text style={ styles.menuButtonText }>
+                { userBalance < selectedBet ? 'Insufficient Coins' : 'Find Match' }
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={ styles.backButton } onPress={ () => setMode('select_players') }>
+              <Text style={ styles.backButtonText }>Back</Text>
+            </TouchableOpacity>
+          </View>
+        ) }
+
         { mode === 'searching' && (
           <View style={ styles.searchingContainer }>
+            {/* Bet info strip */}
+            <View style={ styles.searchBetStrip }>
+              <Text style={ styles.searchBetStripText }>Entry: 💰 { entryFeeRef.current.toLocaleString() }</Text>
+              <View style={ styles.searchBetDivider } />
+              <Text style={ styles.searchBetStripPrize }>Prize: 💰 { (entryFeeRef.current * playerCount).toLocaleString() }</Text>
+            </View>
+
             { renderProfileBoxes() }
 
             { matchedPlayers.length < playerCount ? (
@@ -325,6 +413,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 18,
     alignItems: 'center',
+  },
+  menuButtonDisabled: {
+    opacity: 0.5,
   },
   menuButtonText: {
     fontSize: 17,
@@ -466,7 +557,120 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     letterSpacing: 2,
-  }
+  },
+  // ── Bet Selection Styles ──
+  betContainer: {
+    gap: 14,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#242438',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#FFC107',
+  },
+  balanceLabel: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  balanceAmount: {
+    color: '#FFC107',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  coinGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+  },
+  coinOption: {
+    width: '28%',
+    backgroundColor: '#242438',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  coinOptionSelected: {
+    borderColor: '#E8524A',
+    backgroundColor: '#2E2E4A',
+  },
+  coinOptionDisabled: {
+    opacity: 0.35,
+  },
+  coinOptionIcon: {
+    fontSize: 18,
+    marginBottom: 3,
+  },
+  coinOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.6)',
+  },
+  coinOptionTextSelected: {
+    color: '#FFFFFF',
+  },
+  insufficientLabel: {
+    fontSize: 9,
+    color: '#E8524A',
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  prizePreviewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#1A2E1A',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  prizePreviewLabel: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  prizePreviewAmount: {
+    color: '#4CAF50',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  // ── Search Strip Styles ──
+  searchBetStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#242438',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+    width: '100%',
+  },
+  searchBetStripText: {
+    color: '#FFC107',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  searchBetDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  searchBetStripPrize: {
+    color: '#4CAF50',
+    fontSize: 13,
+    fontWeight: '700',
+  },
 });
 
 export default OnlineMatchmakingModal;

@@ -237,12 +237,28 @@ const HomeScreen = () => {
       <OnlineMatchmakingModal
         visible={ onlineModalVisible }
         user={ user }
+        userBalance={ user?.coins || 0 }
         onPressHide={ () => setOnlineModalVisible(false) }
-        onMatchFound={ (roomState) => {
+        onMatchFound={ async (roomState) => {
+          // Extract entryFee passed from modal
+          const fee = roomState.entryFee || 0;
+          const playerCount = roomState.players?.length || 2;
+          const prize = fee * playerCount;
+
+          // Deduct coins before navigating
+          if (fee > 0 && user) {
+            try {
+              await updateCoinsMutation.mutateAsync(user.coins - fee);
+            } catch (e) {
+              // Error handled in mutation — don't navigate if deduction failed
+              return;
+            }
+          }
+
           setOnlineModalVisible(false);
           SoundPlayer.stop();
           dispatch(resetGame());
-          dispatch(setEntryFee({ entryFee: 0, prizeMoney: 0 })); // Simplified for now
+          dispatch(setEntryFee({ entryFee: fee, prizeMoney: prize }));
           dispatch({ type: 'game/setGameMode', payload: 'ONLINE_MULTIPLAYER' });
           dispatch({ type: 'game/setRoomId', payload: roomState.roomId });
 

@@ -44,6 +44,13 @@ class SocketService {
     }
   }
 
+  // Forfeit the current game — tells server to give win to opponent
+  forfeitGame(roomId) {
+    if (this.socket) {
+      this.socket.emit('forfeit_game', { roomId });
+    }
+  }
+
   createPrivateRoom(data, callback) {
     if (this.socket) {
       this.socket.emit('create_room', data, callback);

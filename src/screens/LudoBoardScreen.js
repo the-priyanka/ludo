@@ -76,6 +76,10 @@ const LudoBoardScreen = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [showStartImage, setShowStartImage] = useState(false);
 
+  const roomId = useSelector(state => state.game.roomId);
+  const entryFee = useSelector(state => state.game.entryFee) || 0;
+  const activePlayersList = useSelector(state => state.game.activePlayersList) || [1, 2, 3, 4];
+
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {
@@ -132,9 +136,22 @@ const LudoBoardScreen = () => {
         dispatch({ type: 'game/announceWinner', payload: localPlayerNo });
       });
 
+      // Listen for explicit forfeit events
+      socketService.socket?.on('player_forfeited', ({ winnerPlayerNo }) => {
+        if (winnerPlayerNo === localPlayerNo) {
+          Toast.show({
+            type: 'success',
+            text1: 'Opponent Forfeited!',
+            text2: 'You win! 🏆',
+          });
+        }
+        dispatch({ type: 'game/announceWinner', payload: winnerPlayerNo });
+      });
+
       return () => {
         socketService.offGameAction();
         socketService.offPlayerDisconnected();
+        socketService.socket?.off('player_forfeited');
       };
     }
   }, [gameMode, dispatch, localPlayerNo]);
@@ -175,11 +192,11 @@ const LudoBoardScreen = () => {
 
   const AvatarImage = user?.avatar ? AVATARS[user.avatar] || UserIcon : UserIcon;
 
-  const boardRotation = localPlayerNo === 1 ? 0 
+  const boardRotation = localPlayerNo === 1 ? 0
     : localPlayerNo === 2 ? -90
-    : localPlayerNo === 3 ? 180
-    : localPlayerNo === 4 ? 90
-    : 0;
+      : localPlayerNo === 3 ? 180
+        : localPlayerNo === 4 ? 90
+          : 0;
 
   const playersData = { 1: player1, 2: player2, 3: player3, 4: player4 };
   const playerColors = { 1: Colors.red, 2: Colors.green, 3: Colors.yellow, 4: Colors.blue };
@@ -204,7 +221,7 @@ const LudoBoardScreen = () => {
           <Dice color={ playerColors[TL] } player={ TL } data={ playersData[TL] } />
           <Dice color={ playerColors[TR] } player={ TR } rotate data={ playersData[TR] } />
         </View>
-        <View style={ [styles.ludoBoard, { transform: [{ rotate: `${boardRotation}deg` }] }] }>
+        <View style={ [styles.ludoBoard, { transform: [{ rotate: `${ boardRotation }deg` }] }] }>
           <View style={ styles.plotContainer }>
             <Pocket color={ Colors.green } player={ 2 } data={ player2 }
               isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(2) ? true : false) : true }
@@ -268,6 +285,11 @@ const LudoBoardScreen = () => {
         <MenuModel
           onPressHide={ () => setMenuVisible(false) }
           visible={ menuVisible }
+          gameMode={ gameMode }
+          roomId={ roomId }
+          entryFee={ entryFee }
+          activePlayersList={ activePlayersList }
+          localPlayerNo={ localPlayerNo }
         />
       ) }
 

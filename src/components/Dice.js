@@ -45,7 +45,7 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
   const playerPieces = useSelector(
     state => state.game[`player${ currentPlayerChance }`],
   );
-  
+
   const gameMode = useSelector(state => state.game.gameMode);
   const localPlayerNo = useSelector(state => state.game.localPlayerNo);
   const roomId = useSelector(state => state.game.roomId);
