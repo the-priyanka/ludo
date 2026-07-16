@@ -15,7 +15,7 @@ const SplashScreen = () => {
     setTimeout(async () => {
       const token = await AsyncStorage.getItem('userToken');
       if (token) {
-        resetAndNavigate('HomeScreen');
+        resetAndNavigate('LandingScreen');
       } else {
         resetAndNavigate('LoginScreen');
       }
@@ -50,8 +50,8 @@ const SplashScreen = () => {
 
   return (
     <Wrapper>
-      <Animated.View style={[styles.imgContainer, { transform: [{ scale }] }]}>
-        <Image source={Logo} style={styles.img} />
+      <Animated.View style={ [styles.imgContainer, { transform: [{ scale }] }] }>
+        <Image source={ Logo } style={ styles.img } />
       </Animated.View>
     </Wrapper>
   );

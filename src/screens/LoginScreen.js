@@ -32,7 +32,7 @@ const LoginScreen = ({ navigation }) => {
       const res = await api.post('/auth/login', { email, password });
       if (res.data.success) {
         await AsyncStorage.setItem('userToken', res.data.token);
-        navigate('HomeScreen');
+        navigate('LandingScreen');
       }
     } catch (error) {
       Alert.alert(
@@ -45,38 +45,38 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <Wrapper style={styles.mainContainer}>
-      <View style={styles.imgContainer}>
-        <Image source={Logo} style={styles.img} />
+    <Wrapper style={ styles.mainContainer }>
+      <View style={ styles.imgContainer }>
+        <Image source={ Logo } style={ styles.img } />
       </View>
-      
-      <View style={styles.formContainer}>
+
+      <View style={ styles.formContainer }>
         <TextInput
-          style={styles.input}
+          style={ styles.input }
           placeholder="Email"
           placeholderTextColor="rgba(255, 255, 255, 0.7)"
-          value={email}
-          onChangeText={setEmail}
+          value={ email }
+          onChangeText={ setEmail }
           keyboardType="email-address"
           autoCapitalize="none"
         />
         <TextInput
-          style={styles.input}
+          style={ styles.input }
           placeholder="Password"
           placeholderTextColor="rgba(255, 255, 255, 0.7)"
-          value={password}
-          onChangeText={setPassword}
+          value={ password }
+          onChangeText={ setPassword }
           secureTextEntry
         />
-        
+
         <GradientButton
-          title={loading ? 'LOADING...' : 'LOGIN'}
-          onPress={handleLogin}
+          title={ loading ? 'LOADING...' : 'LOGIN' }
+          onPress={ handleLogin }
         />
-        
-        <Pressable onPress={() => navigation.navigate('SignupScreen')}>
-          <Text style={styles.switchText}>
-            Don't have an account? <Text style={styles.switchTextBold}>Sign Up</Text>
+
+        <Pressable onPress={ () => navigation.navigate('SignupScreen') }>
+          <Text style={ styles.switchText }>
+            Don't have an account? <Text style={ styles.switchTextBold }>Sign Up</Text>
           </Text>
         </Pressable>
       </View>

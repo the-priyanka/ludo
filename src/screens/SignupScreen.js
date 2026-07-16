@@ -33,7 +33,7 @@ const SignupScreen = ({ navigation }) => {
       const res = await api.post('/auth/register', { username, email, password });
       if (res.data.success) {
         await AsyncStorage.setItem('userToken', res.data.token);
-        navigate('HomeScreen');
+        navigate('LandingScreen');
       }
     } catch (error) {
       Alert.alert(
@@ -46,46 +46,46 @@ const SignupScreen = ({ navigation }) => {
   };
 
   return (
-    <Wrapper style={styles.mainContainer}>
-      <View style={styles.imgContainer}>
-        <Image source={Logo} style={styles.img} />
+    <Wrapper style={ styles.mainContainer }>
+      <View style={ styles.imgContainer }>
+        <Image source={ Logo } style={ styles.img } />
       </View>
-      
-      <View style={styles.formContainer}>
+
+      <View style={ styles.formContainer }>
         <TextInput
-          style={styles.input}
+          style={ styles.input }
           placeholder="Username"
           placeholderTextColor="rgba(255, 255, 255, 0.7)"
-          value={username}
-          onChangeText={setUsername}
+          value={ username }
+          onChangeText={ setUsername }
           autoCapitalize="none"
         />
         <TextInput
-          style={styles.input}
+          style={ styles.input }
           placeholder="Email"
           placeholderTextColor="rgba(255, 255, 255, 0.7)"
-          value={email}
-          onChangeText={setEmail}
+          value={ email }
+          onChangeText={ setEmail }
           keyboardType="email-address"
           autoCapitalize="none"
         />
         <TextInput
-          style={styles.input}
+          style={ styles.input }
           placeholder="Password"
           placeholderTextColor="rgba(255, 255, 255, 0.7)"
-          value={password}
-          onChangeText={setPassword}
+          value={ password }
+          onChangeText={ setPassword }
           secureTextEntry
         />
-        
+
         <GradientButton
-          title={loading ? 'LOADING...' : 'SIGN UP'}
-          onPress={handleSignup}
+          title={ loading ? 'LOADING...' : 'SIGN UP' }
+          onPress={ handleSignup }
         />
-        
-        <Pressable onPress={() => navigation.navigate('LoginScreen')}>
-          <Text style={styles.switchText}>
-            Already have an account? <Text style={styles.switchTextBold}>Log In</Text>
+
+        <Pressable onPress={ () => navigation.navigate('LoginScreen') }>
+          <Text style={ styles.switchText }>
+            Already have an account? <Text style={ styles.switchTextBold }>Log In</Text>
           </Text>
         </Pressable>
       </View>

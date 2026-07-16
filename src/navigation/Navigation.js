@@ -2,6 +2,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import LudoBoardScreen from '../screens/LudoBoardScreen';
 import SplashScreen from '../screens/SplashScreen';
 import HomeScreen from '../screens/HomeScreen';
+import LandingScreen from '../screens/LandingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -32,6 +33,13 @@ const Navigation = () => {
           name="SignupScreen"
           component={SignupScreen}
           options={{ animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="LandingScreen"
+          component={LandingScreen}
+          options={{
+            animation: 'fade',
+          }}
         />
         <Stack.Screen
           name="HomeScreen"
