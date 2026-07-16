@@ -30,6 +30,7 @@ import VsCpuModal from '../components/VsCpuModal';
 import CoinSelectionModal from '../components/CoinSelectionModal';
 import OnlineMatchmakingModal from '../components/OnlineMatchmakingModal';
 import Toast from 'react-native-toast-message';
+import socketService from '../helpers/socketService';
 
 const AVATARS = {
   UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon
@@ -48,7 +49,6 @@ const HomeScreen = () => {
     queryKey: ['user'],
     queryFn: async () => {
       const res = await api.get('/auth/me');
-      console.log("res", res)
       return res.data.success ? res.data.user : null;
     },
     enabled: isFocused,
@@ -250,7 +250,7 @@ const HomeScreen = () => {
           dispatch({ type: 'game/setActivePlayers', payload: { activePlayers: activeList.length, activePlayersList: activeList } });
 
           // we need to know which player number we are
-          const myPlayerInfo = roomState.players.find(p => p.id === require('../helpers/socketService').default.socket.id);
+          const myPlayerInfo = roomState.players.find(p => p.id === socketService.socket?.id);
           dispatch({ type: 'game/setLocalPlayerNo', payload: myPlayerInfo ? myPlayerInfo.playerNo : 1 });
 
           navigate('LudoBoardScreen');

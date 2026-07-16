@@ -1,6 +1,6 @@
 import { SafeSpots, StarSpots, startingPoints, turningPoints, victoryStart } from "../../helpers/PlotData";
 import { selectCurrentPositions, selectDiceNo } from "./gameSelectors";
-import { announceWinner, disableTouch, unfreezeDice, updateDiceNo, updateFireworks, updatePlayerChance, updatePlayerPieceValue } from "./gameSlice";
+import { announceWinner, disableTouch, enableCellSelection, enablePileSelection, unfreezeDice, updateDiceNo, updateFireworks, updatePlayerChance, updatePlayerPieceValue } from "./gameSlice";
 import { playSound } from '../../helpers/SoundUtility';
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
@@ -19,6 +19,8 @@ export const handleDiceRollThunk = (newDiceNo, player) => async (dispatch, getSt
   const state = getState();
   const playerPieces = state.game[`player${ player }`];
   const activePlayersList = state.game.activePlayersList || [1,2,3,4];
+  const localPlayerNo = state.game.localPlayerNo;
+  const isLocalPlayer = player === localPlayerNo;
 
   dispatch(updateDiceNo({ diceNo: newDiceNo }));
 
@@ -33,7 +35,10 @@ export const handleDiceRollThunk = (newDiceNo, player) => async (dispatch, getSt
 
   if (isAnyPieceAlive === -1) {
     if (newDiceNo === 6) {
-      // dispatch(enablePileSelection({ playerNo: player })); // Not needed for opponent, they will emit their move
+      // Only enable pile selection for the local player — opponent selects on their own device
+      if (isLocalPlayer) {
+        dispatch(enablePileSelection({ playerNo: player }));
+      }
     } else {
       await delay(600);
       dispatch(updatePlayerChance({ chancePlayer: getNextChance(player) }));
@@ -53,10 +58,14 @@ export const handleDiceRollThunk = (newDiceNo, player) => async (dispatch, getSt
       return;
     }
 
-    if (newDiceNo === 6) {
-      // dispatch(enablePileSelection({ playerNo: player })); // Not needed for opponent
+    if (isLocalPlayer) {
+      // Enable selection only for the local player — opponent will do this on their device
+      if (newDiceNo === 6) {
+        dispatch(enablePileSelection({ playerNo: player }));
+      }
+      dispatch(enableCellSelection({ playerNo: player }));
     }
-    // dispatch(enableCellSelection({ playerNo: player })); // Not needed for opponent
+    // For opponent's turn: do nothing here — they will select & emit move_piece
   }
 }
 

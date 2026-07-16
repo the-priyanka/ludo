@@ -53,7 +53,6 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
   const isOnlineTurn = gameMode === 'ONLINE_MULTIPLAYER' && currentPlayerChance === player;
   const isOpponentTurnOnline = isOnlineTurn && localPlayerNo !== player;
 
-  console.log("cpuPlayers---->", cpuPlayers)
 
   const pileIcon = BackgroundImage.GetImage(color);
   const diceIcon = BackgroundImage.GetImage(diceNo);
@@ -88,14 +87,20 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
 
   const handleDicePress = async () => {
     const newDiceNo = Math.floor(Math.random() * 6) + 1;
-    // const newDiceNo = 2
     playSound('dice_roll');
     setDiceRolling(true);
-    
+
     if (gameMode === 'ONLINE_MULTIPLAYER') {
+      // Emit to server; the server broadcasts back to ALL clients (including us).
+      // The socket listener in LudoBoardScreen handles handleDiceRollThunk for everyone,
+      // so we must NOT also dispatch locally — that would double-process the turn.
       socketService.emitGameAction('roll_dice', { newDiceNo, player }, roomId);
+      await delay(800);
+      setDiceRolling(false);
+      // Do NOT dispatch locally here — handled by the socket echo via handleDiceRollThunk.
+      return;
     }
-    
+
     await delay(800);
     dispatch(updateDiceNo({ diceNo: newDiceNo }));
     setDiceRolling(false);

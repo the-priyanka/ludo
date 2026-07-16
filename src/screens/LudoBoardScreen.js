@@ -80,7 +80,6 @@ const LudoBoardScreen = () => {
     queryKey: ['user'],
     queryFn: async () => {
       const res = await api.get('/auth/me');
-      console.log("res", res)
       return res.data.success ? res.data.user : null;
     },
     enabled: isFocused,
@@ -123,21 +122,22 @@ const LudoBoardScreen = () => {
         }
       });
 
-      socketService.onPlayerDisconnected((data) => {
+      socketService.onPlayerDisconnected(() => {
         Toast.show({
           type: 'info',
           text1: 'Opponent Disconnected',
           text2: 'You win by forfeit!',
         });
-        // Simplistic forfeit win for now
-        dispatch({ type: 'game/announceWinner', payload: chancePlayer });
+        // We (localPlayerNo) win by forfeit when opponent disconnects
+        dispatch({ type: 'game/announceWinner', payload: localPlayerNo });
       });
 
       return () => {
         socketService.offGameAction();
+        socketService.offPlayerDisconnected();
       };
     }
-  }, [gameMode, dispatch, chancePlayer]);
+  }, [gameMode, dispatch, localPlayerNo]);
 
   useEffect(() => {
     if (!isFocused) {

@@ -74,6 +74,8 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
       setMatchedPlayers([]);
       socketService.connect();
 
+      // Clean up any old listener before registering a new one
+      socketService.offMatchFound();
       socketService.onMatchFound((roomState) => {
         setIsSearching(false);
         Toast.show({ type: 'success', text1: 'Match Found!', position: 'top' });
@@ -90,6 +92,8 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
     } else {
       fadeAnim.setValue(0);
       slideAnim.setValue(30);
+      // Remove listener when modal closes
+      socketService.offMatchFound();
     }
   }, [visible, onMatchFound, fadeAnim, slideAnim]);
 
@@ -97,8 +101,6 @@ const OnlineMatchmakingModal = ({ visible, user, onPressHide, onMatchFound }) =>
     playSound('ui');
     setMode('select_players');
   }, []);
-
-  console.log("user--->", user)
 
   const handleStartSearch = useCallback((selectedCount) => {
     playSound('ui');

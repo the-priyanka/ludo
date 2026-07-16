@@ -85,6 +85,18 @@ class SocketService {
       this.socket.off('game_action');
     }
   }
+
+  offMatchFound() {
+    if (this.socket) {
+      this.socket.off('match_found');
+    }
+  }
+
+  offPlayerDisconnected() {
+    if (this.socket) {
+      this.socket.off('player_disconnected');
+    }
+  }
 }
 
 export default new SocketService();
