@@ -20,7 +20,7 @@ const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2;
 const GAMES = [
   {
     id: 'ludo',
-    name: 'Ludo King',
+    name: 'Ludo',
     tag: '2-4 Players',
     image: require('../assets/images/ludo_thumbnail.png'),
     available: true,

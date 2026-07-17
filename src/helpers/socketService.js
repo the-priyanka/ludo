@@ -1,8 +1,9 @@
 import { io } from 'socket.io-client';
 import { Platform } from 'react-native';
+import { SOCKET_URL_ANDROID, SOCKET_URL_IOS } from '@env';
 
-// Use the local backend URL for testing
-const SOCKET_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5001' : 'http://localhost:5001';
+// Use the local backend URL for testing from .env
+const SOCKET_URL = Platform.OS === 'android' ? SOCKET_URL_ANDROID : SOCKET_URL_IOS;
 
 class SocketService {
   constructor() {

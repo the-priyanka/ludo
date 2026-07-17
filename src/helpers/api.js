@@ -1,9 +1,10 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { API_BASE_URL_ANDROID, API_BASE_URL_IOS } from '@env';
 
-// Use the local backend URL
-const baseURL = Platform.OS === 'android' ? 'http://10.0.2.2:5001/api' : 'http://localhost:5001/api';
+// Use the local backend URL from .env
+const baseURL = Platform.OS === 'android' ? API_BASE_URL_ANDROID : API_BASE_URL_IOS;
 
 const api = axios.create({
   baseURL,
