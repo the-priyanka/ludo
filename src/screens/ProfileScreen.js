@@ -50,6 +50,15 @@ const AVATAR_COLORS = {
   UserIcon: '#00a049',
 };
 
+// ─── Bottom Nav Item ─────────────────────────────────────────────────────────
+const BottomNavItem = ({ icon, label, active, onPress }) => (
+  <TouchableOpacity style={ styles.navItem } onPress={ onPress } activeOpacity={ 0.7 }>
+    { active && <View style={ styles.navActiveIndicator } /> }
+    <Text style={ [styles.navIcon, active && styles.navIconActive] }>{ icon }</Text>
+    <Text style={ [styles.navLabel, active && styles.navLabelActive] }>{ label }</Text>
+  </TouchableOpacity>
+);
+
 const ProfileScreen = () => {
   const isFocused = useIsFocused();
   const queryClient = useQueryClient();
@@ -285,6 +294,12 @@ const ProfileScreen = () => {
           ) }
         </View>
       </ScrollView>
+
+      {/* ── Bottom Navigation Bar ── */ }
+      <View style={ styles.bottomNav }>
+        <BottomNavItem icon="🏠" label="Home" active={ false } onPress={ () => navigate('LandingScreen') } />
+        <BottomNavItem icon="👤" label="Profile" active={ true } onPress={ () => navigate('ProfileScreen') } />
+      </View>
     </Wrapper>
   );
 };
@@ -304,7 +319,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 48,
+    paddingBottom: 110,
   },
 
   /* Header */
@@ -539,6 +554,46 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     marginTop: 16,
     fontSize: 15,
+  },
+
+  // Bottom Nav
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: '#160D2E',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(155,135,200,0.15)',
+    paddingBottom: 24,
+    paddingTop: 10,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    position: 'relative',
+    paddingTop: 6,
+  },
+  navIcon: { fontSize: 22, opacity: 0.4 },
+  navIconActive: { opacity: 1 },
+  navLabel: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.4)',
+    fontWeight: '600',
+  },
+  navLabelActive: {
+    color: '#FFD700',
+  },
+  navActiveIndicator: {
+    position: 'absolute',
+    top: 0,
+    width: 24,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: '#FFD700',
   },
 });
 

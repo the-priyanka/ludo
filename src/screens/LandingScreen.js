@@ -236,7 +236,7 @@ const LandingScreen = () => {
 
       {/* ── Bottom Navigation Bar ── */ }
       <View style={ styles.bottomNav }>
-        <BottomNavItem icon="🏠" label="Home" active={ false } onPress={ () => navigate('LandingScreen') } />
+        <BottomNavItem icon="🏠" label="Home" active={ true } onPress={ () => navigate('LandingScreen') } />
         {/* <BottomNavItem icon="🎮" label="Games" active={ true } onPress={ () => { } } /> */ }
         {/* <BottomNavItem icon="🏆" label="Leaderboard" active={ false } onPress={ () => { } } /> */ }
         <BottomNavItem icon="👤" label="Profile" active={ false } onPress={ () => navigate('ProfileScreen') } />
