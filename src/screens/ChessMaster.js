@@ -18,8 +18,17 @@ import bq from '../assets/images/chess/bq.png';
 import bk from '../assets/images/chess/bk.png';
 
 const { width } = Dimensions.get('window');
-const BOARD_SIZE = width - 32;
+const BOARD_SIZE = width - 24;
 const SQUARE_SIZE = BOARD_SIZE / 8;
+
+const CornerBrackets = () => (
+  <View style={ StyleSheet.absoluteFill } pointerEvents="none">
+    <View style={ [styles.bracket, styles.bracketTL] } />
+    <View style={ [styles.bracket, styles.bracketTR] } />
+    <View style={ [styles.bracket, styles.bracketBL] } />
+    <View style={ [styles.bracket, styles.bracketBR] } />
+  </View>
+);
 
 const ChessMaster = ({ navigation }) => {
   const [game, setGame] = useState(new Chess());
@@ -62,7 +71,6 @@ const ChessMaster = ({ navigation }) => {
     }
   }, [selectedSquare, pulseAnim]);
 
-  // Update board state
   const updateBoard = useCallback(() => {
     setBoard(game.board());
     if (game.isCheckmate()) {
@@ -77,20 +85,18 @@ const ChessMaster = ({ navigation }) => {
   }, [game]);
 
   const onSquarePress = (square) => {
-    if (animatingMove) return; // Prevent clicks during animation
+    if (animatingMove) return;
 
-    // If a square is already selected, try to move
     if (selectedSquare) {
       const moveOptions = {
         from: selectedSquare,
         to: square,
-        promotion: 'q', // Always promote to queen for simplicity
+        promotion: 'q',
       };
 
       try {
         const move = game.move(moveOptions);
         if (move) {
-          // Valid move
           const fromIndices = getIndices(move.from);
           const toIndices = getIndices(move.to);
           const movedPiece = board[fromIndices.i][fromIndices.j];
@@ -122,11 +128,9 @@ const ChessMaster = ({ navigation }) => {
           return;
         }
       } catch (e) {
-        // Invalid move, ignore or select new piece
       }
     }
 
-    // Select piece if it belongs to the current turn
     const piece = game.get(square);
     if (piece && piece.color === game.turn()) {
       setSelectedSquare(square);
@@ -139,12 +143,24 @@ const ChessMaster = ({ navigation }) => {
   };
 
   const resetGame = () => {
+    if (animatingMove) return;
     const newGame = new Chess();
     setGame(newGame);
     setBoard(newGame.board());
     setSelectedSquare(null);
     setValidMoves([]);
     playSound('game_start');
+  };
+
+  const handleUndo = () => {
+    if (animatingMove) return;
+    const undone = game.undo();
+    if (undone) {
+      setBoard(game.board());
+      setSelectedSquare(null);
+      setValidMoves([]);
+      playSound('pile_move');
+    }
   };
 
   const getPieceImage = (piece) => {
@@ -164,7 +180,6 @@ const ChessMaster = ({ navigation }) => {
     if (animatingMove && animatingMove.fromSquare === square) {
       return null;
     }
-
     if (!piece) return null;
 
     const isSelected = selectedSquare === square;
@@ -226,9 +241,8 @@ const ChessMaster = ({ navigation }) => {
     const isSelected = selectedSquare === square;
     const isValidMove = showLegalMoves && validMoves.includes(square);
     const piece = board[i][j];
-
-    // Check if the current square contains the king that is in check
     const isKingInCheck = game.isCheck() && piece && piece.type === 'k' && piece.color === game.turn();
+    const textColor = isLightSquare ? '#B58863' : '#F0D9B5';
 
     return (
       <TouchableOpacity
@@ -236,95 +250,114 @@ const ChessMaster = ({ navigation }) => {
         style={ [
           styles.square,
           isLightSquare ? styles.lightSquare : styles.darkSquare,
-          isSelected && styles.selectedSquare,
+          isSelected && styles.selectedSquareHighlight,
+          isValidMove && styles.validMoveHighlight,
           isKingInCheck && styles.inCheckSquare,
         ] }
         onPress={ () => onSquarePress(square) }
-        activeOpacity={ 0.8 }
+        activeOpacity={ 0.9 }
       >
+        { (isSelected || isValidMove) && <CornerBrackets /> }
+
+        { j === 0 && (
+          <Text style={ [styles.coordinateText, styles.rankText, { color: textColor }] }>
+            { rank }
+          </Text>
+        ) }
+
         { renderPiece(piece, square) }
-        { isValidMove && <View style={ styles.validMoveIndicator } /> }
+
+        { i === 7 && (
+          <Text style={ [styles.coordinateText, styles.fileText, { color: textColor }] }>
+            { file }
+          </Text>
+        ) }
       </TouchableOpacity>
     );
   };
 
   const { capturedWhite, capturedBlack } = getCapturedPieces();
+  const currentMoveNum = Math.floor(game.history().length / 2) + 1;
+  const isWhiteTurn = game.turn() === 'w';
 
   return (
     <SafeAreaView style={ styles.container }>
-      <StatusBar barStyle="light-content" backgroundColor="#b18852ff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#A9A9A9" />
 
-      <View style={ styles.header }>
-        <TouchableOpacity style={ styles.backBtn } onPress={ () => navigation.goBack() }>
-          <MaterialCommunityIcons name="chevron-left" size={ 32 } color="#FFFFFF" />
+      {/* Action Buttons Toolbar */ }
+      <View style={ styles.toolbar }>
+        <TouchableOpacity style={ styles.actionBtn } onPress={ () => navigation.goBack() }>
+          <MaterialCommunityIcons name="arrow-u-left-top" size={ 26 } color="#FFD700" />
         </TouchableOpacity>
-        <Text style={ styles.headerTitle }>Chess Master</Text>
-        <TouchableOpacity style={ styles.backBtn } onPress={ () => setShowLegalMoves(!showLegalMoves) }>
-          <MaterialCommunityIcons name={ showLegalMoves ? "eye-outline" : "eye-off-outline" } size={ 22 } color="#FFFFFF" />
+        <TouchableOpacity style={ styles.actionBtn } onPress={ resetGame }>
+          <MaterialCommunityIcons name="refresh" size={ 26 } color="#FFD700" />
+        </TouchableOpacity>
+        <TouchableOpacity style={ styles.actionBtn } onPress={ handleUndo }>
+          <MaterialCommunityIcons name="undo" size={ 26 } color="#FFD700" />
+        </TouchableOpacity>
+        <TouchableOpacity style={ styles.actionBtn } onPress={ () => setShowLegalMoves(!showLegalMoves) }>
+          <MaterialCommunityIcons name={ showLegalMoves ? "lightbulb-outline" : "lightbulb-off-outline" } size={ 26 } color="#FFD700" />
+        </TouchableOpacity>
+        <TouchableOpacity style={ styles.actionBtn }>
+          <MaterialCommunityIcons name="cog-outline" size={ 26 } color="#FFD700" />
         </TouchableOpacity>
       </View>
 
-      <Animated.View style={ [styles.gameInfo, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }] }>
-        <Text style={ styles.turnText }>
-          { game.isGameOver() ? 'Game Over' : `${ game.turn() === 'w' ? 'White' : 'Black' }'s Turn` }
+      <View style={ styles.gameArea }>
+        <Animated.View style={ { opacity: fadeAnim, paddingHorizontal: 12, width: '100%', alignItems: 'flex-start' } }>
+          { renderCapturedPieces(capturedWhite, 'w') }
+        </Animated.View>
+
+        <Animated.View style={ [styles.boardContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }] }>
+          <View style={ styles.boardBorder }>
+            { board.map((row, i) => (
+              <View key={ `row-${ i }` } style={ styles.row }>
+                { row.map((_, j) => renderSquare(i, j)) }
+              </View>
+            )) }
+
+            { animatingMove && (
+              <Animated.View style={ {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: SQUARE_SIZE,
+                height: SQUARE_SIZE,
+                justifyContent: 'center',
+                alignItems: 'center',
+                transform: [
+                  { translateX: moveAnim.x },
+                  { translateY: moveAnim.y },
+                  { scale: 1.2 }
+                ],
+                zIndex: 100,
+                elevation: 100,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 10 },
+                shadowOpacity: 0.8,
+                shadowRadius: 10,
+              } }>
+                <Image
+                  source={ getPieceImage(animatingMove.piece) }
+                  style={ { width: SQUARE_SIZE * 0.85, height: SQUARE_SIZE * 0.85, resizeMode: 'contain' } }
+                />
+              </Animated.View>
+            ) }
+          </View>
+        </Animated.View>
+
+        <Animated.View style={ { opacity: fadeAnim, paddingHorizontal: 12, width: '100%', alignItems: 'flex-end', marginTop: 8 } }>
+          { renderCapturedPieces(capturedBlack, 'b') }
+        </Animated.View>
+      </View>
+
+      {/* Bottom Status Bar */ }
+      <View style={ styles.statusBar }>
+        <Text style={ styles.statusTextLeft }>Amateur</Text>
+        <Text style={ styles.statusTextRight }>
+          { game.isGameOver() ? 'Game Over' : `${ currentMoveNum }. ${ isWhiteTurn ? 'White' : 'Black' }'s Move` }
         </Text>
-        { game.isCheck() && !game.isCheckmate() && (
-          <Text style={ styles.checkText }>Check!</Text>
-        ) }
-      </Animated.View>
-
-      <Animated.View style={ { opacity: fadeAnim, paddingHorizontal: 20, width: '100%' } }>
-        { renderCapturedPieces(capturedWhite, 'w') }
-      </Animated.View>
-
-      <Animated.View style={ [styles.boardContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }] }>
-        <View style={ styles.boardBorder }>
-          { board.map((row, i) => (
-            <View key={ `row-${ i }` } style={ styles.row }>
-              { row.map((_, j) => renderSquare(i, j)) }
-            </View>
-          )) }
-
-          { animatingMove && (
-            <Animated.View style={ {
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: SQUARE_SIZE,
-              height: SQUARE_SIZE,
-              justifyContent: 'center',
-              alignItems: 'center',
-              transform: [
-                { translateX: moveAnim.x },
-                { translateY: moveAnim.y },
-                { scale: 1.2 }
-              ],
-              zIndex: 100,
-              elevation: 100,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 10 },
-              shadowOpacity: 0.8,
-              shadowRadius: 10,
-            } }>
-              <Image
-                source={ getPieceImage(animatingMove.piece) }
-                style={ { width: SQUARE_SIZE * 0.85, height: SQUARE_SIZE * 0.85, resizeMode: 'contain' } }
-              />
-            </Animated.View>
-          ) }
-        </View>
-      </Animated.View>
-
-      <Animated.View style={ { opacity: fadeAnim, paddingHorizontal: 20, width: '100%', marginTop: 10 } }>
-        { renderCapturedPieces(capturedBlack, 'b') }
-      </Animated.View>
-
-      <Animated.View style={ { opacity: fadeAnim, transform: [{ translateY: slideAnim }] } }>
-        <TouchableOpacity style={ styles.resetBtn } onPress={ resetGame }>
-          <MaterialCommunityIcons name="refresh" size={ 24 } color="#0F0A1E" />
-          <Text style={ styles.resetBtnText }>Restart Game</Text>
-        </TouchableOpacity>
-      </Animated.View>
+      </View>
 
     </SafeAreaView>
   );
@@ -333,62 +366,48 @@ const ChessMaster = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e190aff',
-  },
-  header: {
-    flexDirection: 'row',
+    backgroundColor: '#8b8080ff', // Grey wood-like tone
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
+  toolbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+  actionBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1E190A',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    elevation: 6,
+    borderWidth: 2,
+    borderColor: '#3a2f1c',
   },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 1,
-  },
-  gameInfo: {
-    alignItems: 'center',
-    marginVertical: 20,
-    minHeight: 60,
-  },
-  turnText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFD700',
-    marginBottom: 8,
-  },
-  checkText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FF6B35',
+  gameArea: {
+    flex: 1,
+    justifyContent: 'center',
   },
   boardContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    marginVertical: 10,
   },
   boardBorder: {
-    borderWidth: 14,
-    borderColor: '#4A2E1B',
-    borderRadius: 8,
-    backgroundColor: '#4A2E1B',
-    borderTopColor: '#5C3A21',
-    borderLeftColor: '#5C3A21',
-    borderBottomColor: '#2C1A0F',
-    borderRightColor: '#2C1A0F',
+    borderWidth: 8,
+    borderColor: '#D4B483', // Light wood border
+    borderRadius: 4,
+    backgroundColor: '#D4B483',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.6,
     shadowRadius: 15,
     elevation: 20,
   },
@@ -400,76 +419,94 @@ const styles = StyleSheet.create({
     height: SQUARE_SIZE,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0,0,0,0.1)',
   },
   lightSquare: {
-    backgroundColor: '#E4C18B',
+    backgroundColor: '#F0D9B5', // Classic light wood
   },
   darkSquare: {
-    backgroundColor: '#6B4423',
+    backgroundColor: '#B58863', // Classic dark wood
   },
-  selectedSquare: {
-    backgroundColor: 'rgba(255, 157, 0, 0.65)',
+  selectedSquareHighlight: {
+    backgroundColor: 'rgba(255, 215, 0, 0.6)', // Yellow glow
+  },
+  validMoveHighlight: {
+    backgroundColor: 'rgba(0, 255, 150, 0.45)', // Cyan/Green glow
   },
   inCheckSquare: {
     backgroundColor: 'rgba(220, 38, 38, 0.85)',
   },
-  pieceIcon: {
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 1, height: 2 },
-    textShadowRadius: 2,
-  },
-  validMoveIndicator: {
+  bracket: {
     position: 'absolute',
-    width: SQUARE_SIZE * 0.3,
-    height: SQUARE_SIZE * 0.3,
-    borderRadius: SQUARE_SIZE * 0.15,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    width: 12,
+    height: 12,
+    borderColor: 'rgba(255, 255, 255, 0.75)',
   },
-  resetBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFD700',
-    marginHorizontal: 40,
-    marginTop: 40,
-    paddingVertical: 14,
-    borderRadius: 24,
-    gap: 8,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
+  bracketTL: {
+    top: 4, left: 4,
+    borderTopWidth: 2, borderLeftWidth: 2,
   },
-  resetBtnText: {
-    fontSize: 18,
+  bracketTR: {
+    top: 4, right: 4,
+    borderTopWidth: 2, borderRightWidth: 2,
+  },
+  bracketBL: {
+    bottom: 4, left: 4,
+    borderBottomWidth: 2, borderLeftWidth: 2,
+  },
+  bracketBR: {
+    bottom: 4, right: 4,
+    borderBottomWidth: 2, borderRightWidth: 2,
+  },
+  coordinateText: {
+    position: 'absolute',
+    fontSize: 10,
     fontWeight: '800',
-    color: '#0F0A1E',
+    opacity: 0.8,
+  },
+  rankText: {
+    top: 2,
+    left: 4,
+  },
+  fileText: {
+    bottom: 0,
+    right: 4,
   },
   capturedContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    minHeight: 28,
+    minHeight: 32,
     alignItems: 'center',
-    marginVertical: 4,
-    paddingHorizontal: 8,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 16,
   },
   capturedContainerEmpty: {
-    minHeight: 28,
-    marginVertical: 4,
-    paddingVertical: 4,
+    minHeight: 32,
   },
   capturedPiece: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     resizeMode: 'contain',
-    marginRight: 4,
+    marginHorizontal: 2,
   },
+  statusBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  statusTextLeft: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  statusTextRight: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  }
 });
 
 export default ChessMaster;
