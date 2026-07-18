@@ -222,32 +222,34 @@ const LudoBoardScreen = () => {
           <Dice color={ playerColors[TR] } player={ TR } rotate data={ playersData[TR] } />
         </View>
         <View style={ [styles.ludoBoard, { transform: [{ rotate: `${ boardRotation }deg` }] }] }>
-          <View style={ styles.plotContainer }>
-            <Pocket color={ Colors.green } player={ 2 } data={ player2 }
-              isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(2) ? true : false) : true }
-            />
-            <VerticalPath cells={ Plot2Data } color={ Colors.yellow } />
-            <Pocket color={ Colors.yellow } player={ 3 } data={ player3 }
-              isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(3) ? true : false) : true }
-            />
-          </View>
-          <View style={ styles.pathContainer }>
-            <HorizontalPath cells={ Plot1Data } color={ Colors.green } />
-            <FourTriangles
-              player1={ player1 }
-              player2={ player2 }
-              player3={ player3 }
-              player4={ player4 }
-            />
-            <HorizontalPath cells={ Plot3Data } color={ Colors.blue } />
-          </View>
-          <View style={ styles.plotContainer }>
-            <Pocket color={ Colors.red } player={ 1 } data={ player1 }
-            />
-            <VerticalPath cells={ Plot4Data } color={ Colors.red } />
-            <Pocket color={ Colors.blue } player={ 4 } data={ player4 }
-              isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(4) ? true : false) : true }
-            />
+          <View style={styles.boardFrame}>
+            <View style={ styles.plotContainer }>
+              <Pocket color={ Colors.green } player={ 2 } data={ player2 }
+                isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(2) ? true : false) : true }
+              />
+              <VerticalPath cells={ Plot2Data } color={ Colors.yellow } />
+              <Pocket color={ Colors.yellow } player={ 3 } data={ player3 }
+                isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(3) ? true : false) : true }
+              />
+            </View>
+            <View style={ styles.pathContainer }>
+              <HorizontalPath cells={ Plot1Data } color={ Colors.green } />
+              <FourTriangles
+                player1={ player1 }
+                player2={ player2 }
+                player3={ player3 }
+                player4={ player4 }
+              />
+              <HorizontalPath cells={ Plot3Data } color={ Colors.blue } />
+            </View>
+            <View style={ styles.plotContainer }>
+              <Pocket color={ Colors.red } player={ 1 } data={ player1 }
+              />
+              <VerticalPath cells={ Plot4Data } color={ Colors.red } />
+              <Pocket color={ Colors.blue } player={ 4 } data={ player4 }
+                isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(4) ? true : false) : true }
+              />
+            </View>
           </View>
         </View>
         <View
@@ -311,6 +313,21 @@ const styles = StyleSheet.create({
     height: '100%',
     alignSelf: 'center',
     padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.6,
+    shadowRadius: 15,
+    elevation: 20,
+  },
+  boardFrame: {
+    flex: 1,
+    backgroundColor: '#8B5A2B', // Dark wood border color
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#4A3018',
+    borderBottomWidth: 8, // 3D thickness
+    borderRightWidth: 6,
   },
   menuIcons: {
     position: 'absolute',
@@ -332,14 +349,14 @@ const styles = StyleSheet.create({
     height: '40%',
     justifyContent: 'space-between',
     flexDirection: 'row',
-    backgroundColor: '#ccc',
+    backgroundColor: '#D2B48C', // Light wood tone
   },
   pathContainer: {
     flexDirection: 'row',
     width: '100%',
     height: '20%',
     justifyContent: 'space-between',
-    backgroundColor: '#1E5162',
+    backgroundColor: '#D2B48C',
   },
   userProfileContainer: {
     position: 'absolute',

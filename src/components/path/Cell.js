@@ -9,7 +9,7 @@ import { RFValue } from 'react-native-responsive-fontsize';
 import Pile from '../Pile';
 import { handleForwardThunk } from '../../redux/reducers/gameAction';
 import socketService from '../../helpers/socketService';
-
+import LinearGradient from 'react-native-linear-gradient';
 const Cell = ({ id, color, index }) => {
   const dispatch = useDispatch();
   const plottedPieces = useSelector(selectCurrentPositions);
@@ -43,9 +43,15 @@ const Cell = ({ id, color, index }) => {
     <View
       style={ [
         styles.container,
-        { backgroundColor: isSafeSpot ? color : 'white' },
+        { backgroundColor: isSafeSpot ? color : '#FAF0E6' },
       ] }
     >
+      <LinearGradient
+        colors={['rgba(255, 255, 255, 0.4)', 'rgba(255, 255, 255, 0.05)', 'rgba(0, 0, 0, 0.05)', 'rgba(0, 0, 0, 0.2)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       { isStarSpot && (
         <Ionicons name="star-outline" size={ RFValue() } color="grey" />
       ) }
@@ -132,8 +138,12 @@ const Cell = ({ id, color, index }) => {
 
 const styles = StyleSheet.create({
   container: {
-    borderWidth: 0.4,
-    borderColor: Colors.borderColor,
+    borderWidth: 1.5,
+    borderColor: 'rgba(0,0,0,0.1)',
+    borderTopColor: 'rgba(255,255,255,0.7)',
+    borderLeftColor: 'rgba(255,255,255,0.7)',
+    borderBottomColor: 'rgba(0,0,0,0.4)',
+    borderRightColor: 'rgba(0,0,0,0.4)',
     width: '100%',
     height: '100%',
     justifyContent: 'center',

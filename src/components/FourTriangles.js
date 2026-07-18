@@ -149,12 +149,16 @@ const styles = StyleSheet.create({
   mainContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 0.8,
+    borderWidth: 2,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
     width: '20%',
     height: '100%',
     overflow: 'hidden',
-    backgroundColor: 'white',
-    borderColor: Colors.borderColor,
+    backgroundColor: '#FAF0E6',
+    borderColor: 'rgba(0,0,0,0.3)',
+    borderTopColor: 'rgba(0,0,0,0.6)',
+    borderLeftColor: 'rgba(0,0,0,0.6)',
   },
 
   lottieView: {

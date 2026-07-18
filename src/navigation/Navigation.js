@@ -6,6 +6,7 @@ import LandingScreen from '../screens/LandingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ChessMaster from '../screens/ChessMaster';
 import { navigationRef } from '../helpers/NavigationUtil';
 
 const {
@@ -58,6 +59,13 @@ const Navigation = () => {
         <Stack.Screen
           name="LudoBoardScreen"
           component={LudoBoardScreen}
+          options={{
+            animation: 'fade',
+          }}
+        />
+        <Stack.Screen
+          name="ChessMaster"
+          component={ChessMaster}
           options={{
             animation: 'fade',
           }}

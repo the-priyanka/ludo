@@ -19,6 +19,7 @@ import PileRed from '../assets/images/piles/red.png';
 import PileYellow from '../assets/images/piles/yellow.png';
 import PileBlue from '../assets/images/piles/blue.png';
 import { Svg, Circle } from 'react-native-svg';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const Pile = ({ cell, pieceId, player, color, onPress }) => {
   const rotation = useRef(new Animated.Value(0)).current;
@@ -44,19 +45,18 @@ const Pile = ({ cell, pieceId, player, color, onPress }) => {
     return piece && piece.travelCount + diceNo <= 57;
   }, [playerPieces, pieceId, diceNo]);
 
-  const getPileImage = useMemo(() => {
+  const getPileColors = useMemo(() => {
     switch (color) {
       case Colors.green:
-        return PileGreen;
+        return { top: '#73C773', side: '#2E662E' };
       case Colors.red:
-        return PileRed;
+        return { top: '#E06666', side: '#802020' };
       case Colors.yellow:
-        return PileYellow;
+        return { top: '#F2C265', side: '#996611' };
       case Colors.blue:
-        return PileBlue;
-
+        return { top: '#66A3E0', side: '#204080' };
       default:
-        return PileGreen;
+        return { top: '#73C773', side: '#2E662E' };
     }
   }, [color]);
 
@@ -123,10 +123,23 @@ const Pile = ({ cell, pieceId, player, color, onPress }) => {
         ) }
       </View>
 
-      <Image
-        source={ getPileImage }
-        style={ { width: 32, height: 32, position: 'absolute', top: -16 } }
-      />
+      <View style={{ 
+        position: 'absolute', top: -16, 
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 6 }, 
+        shadowOpacity: 0.6, 
+        shadowRadius: 5, 
+        elevation: 8,
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        {/* 3D Extrusion Layers */}
+        <MaterialCommunityIcons name="chess-queen" size={32} color={getPileColors.side} style={{ position: 'absolute', top: 4, left: 0 }} />
+        <MaterialCommunityIcons name="chess-queen" size={32} color={getPileColors.side} style={{ position: 'absolute', top: 2, left: 0 }} />
+        
+        {/* Top Face */}
+        <MaterialCommunityIcons name="chess-queen" size={32} color={getPileColors.top} />
+      </View>
     </TouchableOpacity>
   );
 };

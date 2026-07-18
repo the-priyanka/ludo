@@ -31,12 +31,12 @@ const GAMES = [
   {
     id: 'chess',
     name: 'Chess Master',
-    tag: 'Coming Soon',
+    tag: '2 Players',
     image: require('../assets/images/chess_thumbnail.png'),
-    available: false,
-    badge: 'SOON ✨',
-    badgeColor: '#7C3AED',
-    route: null,
+    available: true,
+    badge: 'NEW 🚀',
+    badgeColor: '#10B981',
+    route: 'ChessMaster',
   },
 ];
 
