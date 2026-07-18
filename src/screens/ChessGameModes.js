@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -21,6 +21,9 @@ const ChessGameModes = ({ navigation }) => {
   const slideAnim = useRef(new Animated.Value(40)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
   const cardScale = useRef(new Animated.Value(1)).current;
+  const botCardScale = useRef(new Animated.Value(1)).current;
+
+  const [selectedMode, setSelectedMode] = useState('vsPlayer');
 
   useEffect(() => {
     Animated.parallel([
@@ -54,7 +57,7 @@ const ChessGameModes = ({ navigation }) => {
   };
 
   const handleStartGame = () => {
-    navigation.navigate('ChessMaster');
+    navigation.navigate('ChessMaster', { mode: selectedMode });
   };
 
   return (
@@ -114,51 +117,79 @@ const ChessGameModes = ({ navigation }) => {
         <Text style={styles.sectionTitle}>SELECT MODE</Text>
 
         <View style={styles.modesContainer}>
-           {/* Active Mode Card */}
+           {/* Player vs Player Mode Card */}
            <TouchableOpacity 
               activeOpacity={0.9} 
+              onPress={() => setSelectedMode('vsPlayer')}
               onPressIn={() => handlePressIn(cardScale)}
               onPressOut={() => handlePressOut(cardScale)}
               style={styles.cardWrapper}
            >
              <Animated.View style={{ transform: [{ scale: cardScale }] }}>
-               <View style={[styles.modeCard, styles.modeCardActive, { overflow: 'hidden' }]}>
-                 <LinearGradient 
-                   colors={['rgba(212, 180, 131, 0.15)', 'rgba(212, 180, 131, 0.05)']}
-                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                   style={StyleSheet.absoluteFill}
-                 />
+               <View style={[styles.modeCard, selectedMode === 'vsPlayer' ? styles.modeCardActive : styles.modeCardInactive, { overflow: 'hidden' }]}>
+                 {selectedMode === 'vsPlayer' && (
+                   <LinearGradient 
+                     colors={['rgba(212, 180, 131, 0.15)', 'rgba(212, 180, 131, 0.05)']}
+                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                     style={StyleSheet.absoluteFill}
+                   />
+                 )}
                  <View style={styles.modeCardContent}>
-                    <View style={[styles.modeIconContainer, { backgroundColor: '#D4B483', shadowColor: '#D4B483', elevation: 10, shadowOpacity: 0.5, shadowRadius: 10, shadowOffset: {width: 0, height: 4} }]}>
-                       <MaterialCommunityIcons name="account-group" size={32} color="#0F0A1E" />
+                    <View style={[styles.modeIconContainer, selectedMode === 'vsPlayer' ? { backgroundColor: '#D4B483', shadowColor: '#D4B483', elevation: 10, shadowOpacity: 0.5, shadowRadius: 10, shadowOffset: {width: 0, height: 4} } : { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+                       <MaterialCommunityIcons name="account-group" size={32} color={selectedMode === 'vsPlayer' ? "#0F0A1E" : "#8a7c9f"} />
                     </View>
                     <View style={styles.modeTextContainer}>
-                       <Text style={styles.modeTitle}>Player vs Player</Text>
+                       <Text style={[styles.modeTitle, selectedMode !== 'vsPlayer' && { color: '#8a7c9f' }]}>Player vs Player</Text>
                        <Text style={styles.modeDesc}>Play locally with a friend</Text>
                     </View>
-                    <View style={styles.radioActive}>
-                      <View style={styles.radioInner} />
-                    </View>
+                    {selectedMode === 'vsPlayer' ? (
+                      <View style={styles.radioActive}>
+                        <View style={styles.radioInner} />
+                      </View>
+                    ) : (
+                      <View style={styles.radioInactive} />
+                    )}
                  </View>
                </View>
              </Animated.View>
            </TouchableOpacity>
 
-           {/* Inactive Mode Card */}
-           <View style={[styles.modeCard, styles.modeCardInactive]}>
-              <View style={styles.modeCardContent}>
-                 <View style={[styles.modeIconContainer, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                    <MaterialCommunityIcons name="robot-outline" size={28} color="#8a7c9f" />
+           {/* Player vs Bot Mode Card */}
+           <TouchableOpacity 
+              activeOpacity={0.9} 
+              onPress={() => setSelectedMode('vsBot')}
+              onPressIn={() => handlePressIn(botCardScale)}
+              onPressOut={() => handlePressOut(botCardScale)}
+              style={styles.cardWrapper}
+           >
+             <Animated.View style={{ transform: [{ scale: botCardScale }] }}>
+               <View style={[styles.modeCard, selectedMode === 'vsBot' ? styles.modeCardActive : styles.modeCardInactive, { overflow: 'hidden' }]}>
+                 {selectedMode === 'vsBot' && (
+                   <LinearGradient 
+                     colors={['rgba(212, 180, 131, 0.15)', 'rgba(212, 180, 131, 0.05)']}
+                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                     style={StyleSheet.absoluteFill}
+                   />
+                 )}
+                 <View style={styles.modeCardContent}>
+                    <View style={[styles.modeIconContainer, selectedMode === 'vsBot' ? { backgroundColor: '#D4B483', shadowColor: '#D4B483', elevation: 10, shadowOpacity: 0.5, shadowRadius: 10, shadowOffset: {width: 0, height: 4} } : { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+                       <MaterialCommunityIcons name="robot-outline" size={28} color={selectedMode === 'vsBot' ? "#0F0A1E" : "#8a7c9f"} />
+                    </View>
+                    <View style={styles.modeTextContainer}>
+                       <Text style={[styles.modeTitle, selectedMode !== 'vsBot' && { color: '#8a7c9f' }]}>Player vs Bot</Text>
+                       <Text style={styles.modeDesc}>Play against the AI</Text>
+                    </View>
+                    {selectedMode === 'vsBot' ? (
+                      <View style={styles.radioActive}>
+                        <View style={styles.radioInner} />
+                      </View>
+                    ) : (
+                      <View style={styles.radioInactive} />
+                    )}
                  </View>
-                 <View style={styles.modeTextContainer}>
-                    <Text style={[styles.modeTitle, { color: '#8a7c9f' }]}>Player vs Bot</Text>
-                    <Text style={styles.modeDesc}>Coming Soon in V2</Text>
-                 </View>
-                 <View style={styles.lockIconBadge}>
-                    <MaterialCommunityIcons name="lock" size={16} color="#8a7c9f" />
-                 </View>
-              </View>
-           </View>
+               </View>
+             </Animated.View>
+           </TouchableOpacity>
         </View>
 
       </Animated.View>
@@ -348,6 +379,13 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: '#D4B483',
+  },
+  radioInactive: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   lockIconBadge: {
     width: 32,

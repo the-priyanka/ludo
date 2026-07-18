@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, Alert, StatusBar, Animated, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, Alert, StatusBar, Animated, Image, ImageBackground } from 'react-native';
 import { Chess } from 'chess.js';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { playSound } from '../helpers/SoundUtility';
+import { getBestMove } from '../helpers/chessAI';
 
 import wp from '../assets/images/chess/wp.png';
 import wr from '../assets/images/chess/wr.png';
@@ -16,6 +17,7 @@ import bn from '../assets/images/chess/bn.png';
 import bb from '../assets/images/chess/bb.png';
 import bq from '../assets/images/chess/bq.png';
 import bk from '../assets/images/chess/bk.png';
+import chessBg from '../assets/images/chess/chessBg.jpeg';
 
 const { width } = Dimensions.get('window');
 const BOARD_SIZE = width - 24;
@@ -30,13 +32,15 @@ const CornerBrackets = () => (
   </View>
 );
 
-const ChessMaster = ({ navigation }) => {
+const ChessMaster = ({ route, navigation }) => {
+  const isVsBot = route.params?.mode === 'vsBot';
   const [game, setGame] = useState(new Chess());
   const [board, setBoard] = useState(game.board());
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [validMoves, setValidMoves] = useState([]);
   const [animatingMove, setAnimatingMove] = useState(null);
   const [showLegalMoves, setShowLegalMoves] = useState(true);
+  const [isThinking, setIsThinking] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -84,8 +88,61 @@ const ChessMaster = ({ navigation }) => {
     }
   }, [game]);
 
+  const executeMove = useCallback((moveOptions) => {
+    try {
+      const move = game.move(moveOptions);
+      if (move) {
+        const fromIndices = getIndices(move.from);
+        const toIndices = getIndices(move.to);
+        const movedPiece = board[fromIndices.i][fromIndices.j];
+
+        setAnimatingMove({
+          piece: movedPiece,
+          fromSquare: move.from,
+          toSquare: move.to
+        });
+
+        moveAnim.setValue({ x: fromIndices.j * SQUARE_SIZE, y: fromIndices.i * SQUARE_SIZE });
+
+        setSelectedSquare(null);
+        setValidMoves([]);
+
+        Animated.timing(moveAnim, {
+          toValue: { x: toIndices.j * SQUARE_SIZE, y: toIndices.i * SQUARE_SIZE },
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          if (move.captured) {
+            playSound('collide');
+          } else {
+            playSound('pile_move');
+          }
+          setAnimatingMove(null);
+          updateBoard();
+        });
+        return true;
+      }
+    } catch (e) {
+      // Invalid move
+    }
+    return false;
+  }, [game, board, moveAnim, updateBoard]);
+
+  useEffect(() => {
+    if (isVsBot && game.turn() === 'b' && !game.isGameOver() && !animatingMove && !isThinking) {
+      setIsThinking(true);
+      setTimeout(() => {
+        const bestMoveStr = getBestMove(game, 2);
+        if (bestMoveStr) {
+          executeMove(bestMoveStr);
+        }
+        setIsThinking(false);
+      }, 300);
+    }
+  }, [game, isVsBot, animatingMove, isThinking, executeMove]);
+
   const onSquarePress = (square) => {
-    if (animatingMove) return;
+    if (animatingMove || (isVsBot && game.turn() === 'b')) return;
 
     if (selectedSquare) {
       const moveOptions = {
@@ -94,40 +151,8 @@ const ChessMaster = ({ navigation }) => {
         promotion: 'q',
       };
 
-      try {
-        const move = game.move(moveOptions);
-        if (move) {
-          const fromIndices = getIndices(move.from);
-          const toIndices = getIndices(move.to);
-          const movedPiece = board[fromIndices.i][fromIndices.j];
-
-          setAnimatingMove({
-            piece: movedPiece,
-            fromSquare: move.from,
-            toSquare: move.to
-          });
-
-          moveAnim.setValue({ x: fromIndices.j * SQUARE_SIZE, y: fromIndices.i * SQUARE_SIZE });
-
-          setSelectedSquare(null);
-          setValidMoves([]);
-
-          Animated.timing(moveAnim, {
-            toValue: { x: toIndices.j * SQUARE_SIZE, y: toIndices.i * SQUARE_SIZE },
-            duration: 250,
-            useNativeDriver: true,
-          }).start(() => {
-            if (move.captured) {
-              playSound('collide');
-            } else {
-              playSound('pile_move');
-            }
-            setAnimatingMove(null);
-            updateBoard();
-          });
-          return;
-        }
-      } catch (e) {
+      if (executeMove(moveOptions)) {
+        return;
       }
     }
 
@@ -281,92 +306,101 @@ const ChessMaster = ({ navigation }) => {
   const isWhiteTurn = game.turn() === 'w';
 
   return (
-    <SafeAreaView style={ styles.container }>
-      <StatusBar barStyle="dark-content" backgroundColor="#A9A9A9" />
+    <ImageBackground source={ chessBg } style={ styles.backgroundImage }>
+      <SafeAreaView style={ styles.container }>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={ true } />
 
-      {/* Action Buttons Toolbar */ }
-      <View style={ styles.toolbar }>
-        <TouchableOpacity style={ styles.actionBtn } onPress={ () => navigation.goBack() }>
-          <MaterialCommunityIcons name="arrow-u-left-top" size={ 26 } color="#FFD700" />
-        </TouchableOpacity>
-        <TouchableOpacity style={ styles.actionBtn } onPress={ resetGame }>
-          <MaterialCommunityIcons name="refresh" size={ 26 } color="#FFD700" />
-        </TouchableOpacity>
-        <TouchableOpacity style={ styles.actionBtn } onPress={ handleUndo }>
-          <MaterialCommunityIcons name="undo" size={ 26 } color="#FFD700" />
-        </TouchableOpacity>
-        <TouchableOpacity style={ styles.actionBtn } onPress={ () => setShowLegalMoves(!showLegalMoves) }>
-          <MaterialCommunityIcons name={ showLegalMoves ? "lightbulb-outline" : "lightbulb-off-outline" } size={ 26 } color="#FFD700" />
-        </TouchableOpacity>
-        <TouchableOpacity style={ styles.actionBtn }>
-          <MaterialCommunityIcons name="cog-outline" size={ 26 } color="#FFD700" />
-        </TouchableOpacity>
-      </View>
+        {/* Action Buttons Toolbar */ }
+        <View style={ styles.toolbar }>
+          <TouchableOpacity style={ styles.actionBtn } onPress={ () => navigation.goBack() }>
+            <MaterialCommunityIcons name="arrow-u-left-top" size={ 26 } color="#FFD700" />
+          </TouchableOpacity>
+          <TouchableOpacity style={ styles.actionBtn } onPress={ resetGame }>
+            <MaterialCommunityIcons name="refresh" size={ 26 } color="#FFD700" />
+          </TouchableOpacity>
+          <TouchableOpacity style={ styles.actionBtn } onPress={ handleUndo }>
+            <MaterialCommunityIcons name="undo" size={ 26 } color="#FFD700" />
+          </TouchableOpacity>
+          <TouchableOpacity style={ styles.actionBtn } onPress={ () => setShowLegalMoves(!showLegalMoves) }>
+            <MaterialCommunityIcons name={ showLegalMoves ? "lightbulb-outline" : "lightbulb-off-outline" } size={ 26 } color="#FFD700" />
+          </TouchableOpacity>
+          <TouchableOpacity style={ styles.actionBtn }>
+            <MaterialCommunityIcons name="cog-outline" size={ 26 } color="#FFD700" />
+          </TouchableOpacity>
+        </View>
 
-      <View style={ styles.gameArea }>
-        <Animated.View style={ { opacity: fadeAnim, paddingHorizontal: 12, width: '100%', alignItems: 'flex-start' } }>
-          { renderCapturedPieces(capturedWhite, 'w') }
-        </Animated.View>
+        <View style={ styles.gameArea }>
+          <Animated.View style={ { opacity: fadeAnim, paddingHorizontal: 12, width: '100%', alignItems: 'flex-start' } }>
+            { renderCapturedPieces(capturedWhite, 'w') }
+          </Animated.View>
 
-        <Animated.View style={ [styles.boardContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }] }>
-          <View style={ styles.boardBorder }>
-            { board.map((row, i) => (
-              <View key={ `row-${ i }` } style={ styles.row }>
-                { row.map((_, j) => renderSquare(i, j)) }
-              </View>
-            )) }
+          <Animated.View style={ [styles.boardContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }] }>
+            <View style={ styles.boardBorder }>
+              { board.map((row, i) => (
+                <View key={ `row-${ i }` } style={ styles.row }>
+                  { row.map((_, j) => renderSquare(i, j)) }
+                </View>
+              )) }
 
-            { animatingMove && (
-              <Animated.View style={ {
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: SQUARE_SIZE,
-                height: SQUARE_SIZE,
-                justifyContent: 'center',
-                alignItems: 'center',
-                transform: [
-                  { translateX: moveAnim.x },
-                  { translateY: moveAnim.y },
-                  { scale: 1.2 }
-                ],
-                zIndex: 100,
-                elevation: 100,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 10 },
-                shadowOpacity: 0.8,
-                shadowRadius: 10,
-              } }>
-                <Image
-                  source={ getPieceImage(animatingMove.piece) }
-                  style={ { width: SQUARE_SIZE * 0.85, height: SQUARE_SIZE * 0.85, resizeMode: 'contain' } }
-                />
-              </Animated.View>
-            ) }
-          </View>
-        </Animated.View>
+              { animatingMove && (
+                <Animated.View style={ {
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: SQUARE_SIZE,
+                  height: SQUARE_SIZE,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  transform: [
+                    { translateX: moveAnim.x },
+                    { translateY: moveAnim.y },
+                    { scale: 1.2 }
+                  ],
+                  zIndex: 100,
+                  elevation: 100,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 10 },
+                  shadowOpacity: 0.8,
+                  shadowRadius: 10,
+                } }>
+                  <Image
+                    source={ getPieceImage(animatingMove.piece) }
+                    style={ { width: SQUARE_SIZE * 0.85, height: SQUARE_SIZE * 0.85, resizeMode: 'contain' } }
+                  />
+                </Animated.View>
+              ) }
+            </View>
+          </Animated.View>
 
-        <Animated.View style={ { opacity: fadeAnim, paddingHorizontal: 12, width: '100%', alignItems: 'flex-end', marginTop: 8 } }>
-          { renderCapturedPieces(capturedBlack, 'b') }
-        </Animated.View>
-      </View>
+          <Animated.View style={ { opacity: fadeAnim, paddingHorizontal: 12, width: '100%', alignItems: 'flex-end', marginTop: 8 } }>
+            { renderCapturedPieces(capturedBlack, 'b') }
+          </Animated.View>
+        </View>
 
-      {/* Bottom Status Bar */ }
-      <View style={ styles.statusBar }>
-        <Text style={ styles.statusTextLeft }>Amateur</Text>
-        <Text style={ styles.statusTextRight }>
-          { game.isGameOver() ? 'Game Over' : `${ currentMoveNum }. ${ isWhiteTurn ? 'White' : 'Black' }'s Move` }
-        </Text>
-      </View>
+        {/* Bottom Status Bar */ }
+        <View style={ styles.statusBar }>
+          <Text style={ styles.statusTextLeft }>
+            { isThinking ? 'AI is thinking...' : 'Amateur' }
+          </Text>
+          <Text style={ styles.statusTextRight }>
+            { game.isGameOver() ? 'Game Over' : `${ currentMoveNum }. ${ isWhiteTurn ? 'White' : 'Black' }'s Move` }
+          </Text>
+        </View>
 
-    </SafeAreaView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#8b8080ff', // Grey wood-like tone
+    backgroundColor: 'rgba(0,0,0,0)', // Add a slight dark overlay to make elements pop
     justifyContent: 'space-between',
   },
   toolbar: {
@@ -476,7 +510,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     minHeight: 32,
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 2,
     paddingVertical: 6,
     backgroundColor: 'rgba(0,0,0,0.1)',
     borderRadius: 16,
@@ -485,8 +519,8 @@ const styles = StyleSheet.create({
     minHeight: 32,
   },
   capturedPiece: {
-    width: 20,
-    height: 20,
+    width: 30,
+    height: 30,
     resizeMode: 'contain',
     marginHorizontal: 2,
   },
