@@ -36,7 +36,7 @@ const GAMES = [
     available: true,
     badge: 'NEW 🚀',
     badgeColor: '#10B981',
-    route: 'ChessMaster',
+    route: 'ChessGameModes',
   },
 ];
 
