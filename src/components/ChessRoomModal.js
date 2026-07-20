@@ -8,6 +8,7 @@ import {
   Easing,
   ActivityIndicator,
   TextInput,
+  Share,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { playSound } from '../helpers/SoundUtility';
@@ -99,9 +100,9 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
       chessSocketService.onMatchFound((roomState) => {
         setIsSearching(false);
         Toast.show({ type: 'success', text1: 'Match Found!', position: 'top' });
-        
+
         setMatchedPlayers(roomState.players);
-        
+
         setTimeout(() => {
           onMatchFound({ ...roomState, entryFee: entryFeeRef.current || roomState.entryFee });
         }, 1500);
@@ -111,7 +112,7 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
       slideAnim.setValue(30);
       chessSocketService.offMatchFound();
     }
-  }, [visible, onMatchFound]);
+  }, [visible, onMatchFound, slideAnim, fadeAnim]);
 
   const handleQuickMatch = useCallback(() => {
     playSound('ui');
@@ -130,7 +131,7 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
     setActionType('join');
     setMode('private');
   };
-  
+
   const handleStartSearch = useCallback((fee) => {
     playSound('ui');
     entryFeeRef.current = fee;
@@ -194,14 +195,25 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
       } else {
         const roomFee = res.roomState?.entryFee || 0;
         if (userBalance < roomFee) {
-            setIsSearching(false);
-            Toast.show({ type: 'error', text1: 'Insufficient Coins', text2: `Need ${roomFee} coins to join`, position: 'top' });
-            chessSocketService.forfeitGame(roomIdInput);
+          setIsSearching(false);
+          Toast.show({ type: 'error', text1: 'Insufficient Coins', text2: `Need ${ roomFee } coins to join`, position: 'top' });
+          chessSocketService.forfeitGame(roomIdInput);
         }
       }
     });
   }, [roomIdInput, user, userBalance]);
-  
+
+  const handleShareRoomCode = useCallback(async () => {
+    playSound('ui');
+    try {
+      await Share.share({
+        message: `Let's play Chess! Join my private room using this code: ${ createdRoomId }`,
+      });
+    } catch (error) {
+      console.log('Error sharing room code:', error);
+    }
+  }, [createdRoomId]);
+
   const renderProfileBoxes = () => {
     const boxes = [];
     for (let i = 0; i < 2; i++) {
@@ -223,108 +235,108 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
 
   return (
     <Modal
-      style={styles.modalWrapper}
-      isVisible={visible}
+      style={ styles.modalWrapper }
+      isVisible={ visible }
       backdropColor="#000"
-      backdropOpacity={0.75}
-      onBackdropPress={() => {
+      backdropOpacity={ 0.75 }
+      onBackdropPress={ () => {
         if (mode === 'searching') {
           handleCancelSearch();
         }
         onPressHide();
-      }}
+      } }
       animationIn="fadeIn"
       animationOut="fadeOut"
-      onBackButtonPress={onPressHide}
+      onBackButtonPress={ onPressHide }
     >
-      <Animated.View style={[styles.modalContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>
+      <Animated.View style={ [styles.modalContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }] }>
+        <View style={ styles.header }>
+          <Text style={ styles.title }>
             { mode === 'searching' ? 'Matchmaking' : 'Play Online' }
           </Text>
         </View>
 
-        {mode === 'menu' && (
-          <View style={styles.menuContainer}>
-            <TouchableOpacity style={styles.menuButton} onPress={handleQuickMatch}>
-              <Text style={styles.menuButtonText}>Quick Match</Text>
+        { mode === 'menu' && (
+          <View style={ styles.menuContainer }>
+            <TouchableOpacity style={ styles.menuButton } onPress={ handleQuickMatch }>
+              <Text style={ styles.menuButtonText }>Quick Match</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.menuButton, { backgroundColor: '#4CAF50' }]} onPress={handleSelectCreate}>
-              <Text style={styles.menuButtonText}>Create Private Room</Text>
+            <TouchableOpacity style={ [styles.menuButton, { backgroundColor: '#4CAF50' }] } onPress={ handleSelectCreate }>
+              <Text style={ styles.menuButtonText }>Create Private Room</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.menuButton, { backgroundColor: '#2196F3' }]} onPress={handleSelectJoin}>
-              <Text style={styles.menuButtonText}>Join Private Room</Text>
+            <TouchableOpacity style={ [styles.menuButton, { backgroundColor: '#2196F3' }] } onPress={ handleSelectJoin }>
+              <Text style={ styles.menuButtonText }>Join Private Room</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.backButton} onPress={onPressHide}>
-              <Text style={styles.backButtonText}>Cancel</Text>
+            <TouchableOpacity style={ styles.backButton } onPress={ onPressHide }>
+              <Text style={ styles.backButtonText }>Cancel</Text>
             </TouchableOpacity>
           </View>
-        )}
+        ) }
 
-        {mode === 'select_bet' && (
-          <View style={styles.betContainer}>
-            <View style={styles.balanceRow}>
-              <Text style={styles.balanceLabel}>💰 Your Balance</Text>
-              <Text style={styles.balanceAmount}>{userBalance.toLocaleString()}</Text>
+        { mode === 'select_bet' && (
+          <View style={ styles.betContainer }>
+            <View style={ styles.balanceRow }>
+              <Text style={ styles.balanceLabel }>💰 Your Balance</Text>
+              <Text style={ styles.balanceAmount }>{ userBalance.toLocaleString() }</Text>
             </View>
 
-            <Text style={styles.sectionDesc}>Choose entry fee for the room</Text>
+            <Text style={ styles.sectionDesc }>Choose entry fee for the room</Text>
 
-            <View style={styles.coinGrid}>
-              {COIN_OPTIONS.map((coin) => {
+            <View style={ styles.coinGrid }>
+              { COIN_OPTIONS.map((coin) => {
                 const isSelected = selectedBet === coin;
                 const canAfford = userBalance >= coin;
                 return (
                   <TouchableOpacity
-                    key={coin}
-                    activeOpacity={0.8}
-                    onPress={() => {
+                    key={ coin }
+                    activeOpacity={ 0.8 }
+                    onPress={ () => {
                       playSound('ui');
                       if (canAfford) setSelectedBet(coin);
-                    }}
-                    style={[
+                    } }
+                    style={ [
                       styles.coinOption,
                       isSelected && styles.coinOptionSelected,
                       !canAfford && styles.coinOptionDisabled,
-                    ]}
+                    ] }
                   >
-                    <Text style={styles.coinOptionIcon}>💰</Text>
-                    <Text style={[styles.coinOptionText, isSelected && styles.coinOptionTextSelected]}>
-                      {coin.toLocaleString()}
+                    <Text style={ styles.coinOptionIcon }>💰</Text>
+                    <Text style={ [styles.coinOptionText, isSelected && styles.coinOptionTextSelected] }>
+                      { coin.toLocaleString() }
                     </Text>
-                    {!canAfford && <Text style={styles.insufficientLabel}>Low</Text>}
+                    { !canAfford && <Text style={ styles.insufficientLabel }>Low</Text> }
                   </TouchableOpacity>
                 );
-              })}
+              }) }
             </View>
 
-            <View style={styles.prizePreviewRow}>
-              <Text style={styles.prizePreviewLabel}>🏆 Total Prize Pool</Text>
-              <Text style={styles.prizePreviewAmount}>💰 {(selectedBet * 2).toLocaleString()}</Text>
+            <View style={ styles.prizePreviewRow }>
+              <Text style={ styles.prizePreviewLabel }>🏆 Total Prize Pool</Text>
+              <Text style={ styles.prizePreviewAmount }>💰 { (selectedBet * 2).toLocaleString() }</Text>
             </View>
 
             <TouchableOpacity
-              style={[styles.menuButton, userBalance < selectedBet && styles.menuButtonDisabled]}
-              onPress={() => {
+              style={ [styles.menuButton, userBalance < selectedBet && styles.menuButtonDisabled] }
+              onPress={ () => {
                 if (actionType === 'quick_match') {
                   handleStartSearch(selectedBet);
                 } else {
                   handleCreateRoom(selectedBet);
                 }
-              }}
-              disabled={userBalance < selectedBet}
+              } }
+              disabled={ userBalance < selectedBet }
             >
-              <Text style={styles.menuButtonText}>
-                {userBalance < selectedBet ? 'Insufficient Coins' : (actionType === 'quick_match' ? 'Find Match' : 'Create Room')}
+              <Text style={ styles.menuButtonText }>
+                { userBalance < selectedBet ? 'Insufficient Coins' : (actionType === 'quick_match' ? 'Find Match' : 'Create Room') }
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.backButton} onPress={() => setMode('menu')}>
-              <Text style={styles.backButtonText}>Back</Text>
+            <TouchableOpacity style={ styles.backButton } onPress={ () => setMode('menu') }>
+              <Text style={ styles.backButtonText }>Back</Text>
             </TouchableOpacity>
           </View>
-        )}
-        
+        ) }
+
         { mode === 'searching' && (
           <View style={ styles.searchingContainer }>
             <View style={ styles.searchBetStrip }>
@@ -345,46 +357,49 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
           </View>
         ) }
 
-        {mode === 'private' && (
-          <View style={styles.privateContainer}>
-            {isSearching ? (
-              <View style={styles.searchingContainer}>
-                {createdRoomId ? (
+        { mode === 'private' && (
+          <View style={ styles.privateContainer }>
+            { isSearching ? (
+              <View style={ styles.searchingContainer }>
+                { createdRoomId ? (
                   <>
-                    <Text style={styles.roomCodeLabel}>Your Room Code:</Text>
-                    <View style={styles.roomCodeContainer}>
-                      <Text style={styles.roomCodeText}>{createdRoomId}</Text>
+                    <Text style={ styles.roomCodeLabel }>Your Room Code:</Text>
+                    <View style={ styles.roomCodeContainer }>
+                      <Text style={ styles.roomCodeText }>{ createdRoomId }</Text>
                     </View>
-                    <ActivityIndicator size="large" color="#D4B483" style={{ marginTop: 20 }} />
-                    <Text style={styles.searchingText}>Waiting for friend to join...</Text>
+                    <TouchableOpacity style={ styles.shareButton } onPress={ handleShareRoomCode }>
+                      <Text style={ styles.shareButtonText }>Share Code</Text>
+                    </TouchableOpacity>
+                    <ActivityIndicator size="large" color="#D4B483" style={ { marginTop: 20 } } />
+                    <Text style={ styles.searchingText }>Waiting for friend to join...</Text>
                   </>
                 ) : (
                   <>
                     <ActivityIndicator size="large" color="#D4B483" />
-                    <Text style={styles.searchingText}>Joining room...</Text>
+                    <Text style={ styles.searchingText }>Joining room...</Text>
                   </>
-                )}
+                ) }
               </View>
             ) : (
               <>
                 <TextInput
-                  style={styles.input}
+                  style={ styles.input }
                   placeholder="Enter Room Code"
                   placeholderTextColor="#888"
-                  value={roomIdInput}
-                  onChangeText={setRoomIdInput}
+                  value={ roomIdInput }
+                  onChangeText={ setRoomIdInput }
                   autoCapitalize="characters"
                 />
-                <TouchableOpacity style={[styles.menuButton, { backgroundColor: '#4CAF50' }]} onPress={handleJoinRoom}>
-                  <Text style={styles.menuButtonText}>Join Room</Text>
+                <TouchableOpacity style={ [styles.menuButton, { backgroundColor: '#4CAF50' }] } onPress={ handleJoinRoom }>
+                  <Text style={ styles.menuButtonText }>Join Room</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.backButton} onPress={() => setMode('menu')}>
-                  <Text style={styles.backButtonText}>Back</Text>
+                <TouchableOpacity style={ styles.backButton } onPress={ () => setMode('menu') }>
+                  <Text style={ styles.backButtonText }>Back</Text>
                 </TouchableOpacity>
               </>
-            )}
+            ) }
           </View>
-        )}
+        ) }
 
       </Animated.View>
     </Modal>
@@ -490,6 +505,19 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     letterSpacing: 2,
+  },
+  shareButton: {
+    backgroundColor: '#D4B483',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  shareButtonText: {
+    color: '#0F0A1E',
+    fontSize: 16,
+    fontWeight: '700',
   },
   betContainer: {
     gap: 14,
