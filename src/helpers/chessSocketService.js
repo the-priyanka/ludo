@@ -32,6 +32,18 @@ class ChessSocketService {
     }
   }
 
+  joinMatchmaking(data) {
+    if (this.socket) {
+      this.socket.emit('join_matchmaking', data);
+    }
+  }
+
+  leaveMatchmaking() {
+    if (this.socket) {
+      this.socket.emit('leave_matchmaking');
+    }
+  }
+
   createPrivateRoom(data, callback) {
     if (this.socket) {
       this.socket.emit('create_room', data, callback);

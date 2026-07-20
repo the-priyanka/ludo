@@ -229,8 +229,8 @@ const ChessGameModes = ({ navigation }) => {
                     <MaterialCommunityIcons name="earth" size={ 28 } color={ selectedMode === 'vsFriendOnline' ? "#0F0A1E" : "#8a7c9f" } />
                   </View>
                   <View style={ styles.modeTextContainer }>
-                    <Text style={ [styles.modeTitle, selectedMode !== 'vsFriendOnline' && { color: '#8a7c9f' }] }>Play vs Friend (Online)</Text>
-                    <Text style={ styles.modeDesc }>Play online with entry fee</Text>
+                    <Text style={ [styles.modeTitle, selectedMode !== 'vsFriendOnline' && { color: '#8a7c9f' }] }>Play Online</Text>
+                    <Text style={ styles.modeDesc }>Play online with randoms or friends</Text>
                   </View>
                   { selectedMode === 'vsFriendOnline' ? (
                     <View style={ styles.radioActive }>

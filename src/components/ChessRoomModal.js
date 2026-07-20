@@ -16,15 +16,43 @@ import Toast from 'react-native-toast-message';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../helpers/api';
 
+// Profile Box Component
+const PlayerProfileBox = ({ player, isSearching }) => {
+  return (
+    <View style={ styles.profileBox }>
+      { player ? (
+        <>
+          <View style={ styles.avatarCircle }>
+            <Text style={ styles.avatarText }>{ player.userData?.name ? player.userData.name.charAt(0).toUpperCase() : 'P' }</Text>
+          </View>
+          <Text style={ styles.playerName } numberOfLines={ 1 }>{ player.userData?.name || 'Player' }</Text>
+        </>
+      ) : isSearching ? (
+        <>
+          <ActivityIndicator size="small" color="#D4B483" style={ styles.spinner } />
+          <Text style={ styles.searchingTextSmall }>Searching...</Text>
+        </>
+      ) : (
+        <>
+          <View style={ styles.emptyAvatarCircle } />
+          <Text style={ styles.emptyText }>Waiting...</Text>
+        </>
+      ) }
+    </View>
+  );
+};
+
 const COIN_OPTIONS = [500, 1000, 2000, 5000, 10000];
 
 const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
-  const [mode, setMode] = useState('menu'); // 'menu' | 'select_bet' | 'private'
+  const [mode, setMode] = useState('menu'); // 'menu' | 'select_bet' | 'searching' | 'private'
   const [selectedBet, setSelectedBet] = useState(500);
+  const entryFeeRef = useRef(0);
+  const [matchedPlayers, setMatchedPlayers] = useState([]);
   const [roomIdInput, setRoomIdInput] = useState('');
   const [createdRoomId, setCreatedRoomId] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [actionType, setActionType] = useState('create'); // 'create' or 'join'
+  const [actionType, setActionType] = useState('create'); // 'create', 'join' or 'quick_match'
 
   const slideAnim = useRef(new Animated.Value(30)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -63,15 +91,19 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
       setCreatedRoomId('');
       setSelectedBet(500);
       setRoomIdInput('');
+      setMatchedPlayers([]);
+      entryFeeRef.current = 0;
       chessSocketService.connect();
 
       chessSocketService.offMatchFound();
       chessSocketService.onMatchFound((roomState) => {
         setIsSearching(false);
-        Toast.show({ type: 'success', text1: 'Opponent Joined!', position: 'top' });
+        Toast.show({ type: 'success', text1: 'Match Found!', position: 'top' });
+        
+        setMatchedPlayers(roomState.players);
         
         setTimeout(() => {
-          onMatchFound(roomState);
+          onMatchFound({ ...roomState, entryFee: entryFeeRef.current || roomState.entryFee });
         }, 1500);
       });
     } else {
@@ -80,6 +112,12 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
       chessSocketService.offMatchFound();
     }
   }, [visible, onMatchFound]);
+
+  const handleQuickMatch = useCallback(() => {
+    playSound('ui');
+    setActionType('quick_match');
+    setMode('select_bet');
+  }, []);
 
   const handleSelectCreate = () => {
     playSound('ui');
@@ -90,16 +128,36 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
   const handleSelectJoin = () => {
     playSound('ui');
     setActionType('join');
-    setMode('private'); // directly go to join input
+    setMode('private');
   };
-
-  const handleCreateRoom = useCallback(() => {
+  
+  const handleStartSearch = useCallback((fee) => {
     playSound('ui');
-    if (userBalance < selectedBet) {
-      Toast.show({ type: 'error', text1: 'Insufficient Coins', position: 'top' });
-      return;
-    }
+    entryFeeRef.current = fee;
+    setMode('searching');
+    setIsSearching(true);
 
+    const userData = {
+      name: user?.username || 'Guest',
+      avatar: user?.avatar || 'UserCircleIcon',
+    };
+
+    setMatchedPlayers([{ id: chessSocketService.socket?.id || 'me', userData }]);
+
+    chessSocketService.joinMatchmaking({ entryFee: fee, userData });
+  }, [user]);
+
+  const handleCancelSearch = useCallback(() => {
+    playSound('ui');
+    chessSocketService.leaveMatchmaking();
+    setMode('select_bet');
+    setIsSearching(false);
+    setMatchedPlayers([]);
+  }, []);
+
+  const handleCreateRoom = useCallback((fee) => {
+    playSound('ui');
+    entryFeeRef.current = fee;
     setIsSearching(true);
     setMode('private');
 
@@ -108,7 +166,7 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
       avatar: user?.avatar || 'UserCircleIcon',
     };
 
-    chessSocketService.createPrivateRoom({ entryFee: selectedBet, userData }, (res) => {
+    chessSocketService.createPrivateRoom({ entryFee: fee, userData }, (res) => {
       if (res.success) {
         setCreatedRoomId(res.roomId);
         Toast.show({ type: 'success', text1: 'Room Created!', position: 'top' });
@@ -117,7 +175,7 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
         Toast.show({ type: 'error', text1: 'Failed to create room', position: 'top' });
       }
     });
-  }, [selectedBet, userBalance, user]);
+  }, [user]);
 
   const handleJoinRoom = useCallback(() => {
     playSound('ui');
@@ -138,11 +196,30 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
         if (userBalance < roomFee) {
             setIsSearching(false);
             Toast.show({ type: 'error', text1: 'Insufficient Coins', text2: `Need ${roomFee} coins to join`, position: 'top' });
-            chessSocketService.forfeitGame(roomIdInput); // Leave because of no coins
+            chessSocketService.forfeitGame(roomIdInput);
         }
       }
     });
   }, [roomIdInput, user, userBalance]);
+  
+  const renderProfileBoxes = () => {
+    const boxes = [];
+    for (let i = 0; i < 2; i++) {
+      const player = matchedPlayers[i];
+      boxes.push(
+        <PlayerProfileBox
+          key={ i }
+          player={ player }
+          isSearching={ isSearching && !player }
+        />
+      );
+    }
+    return (
+      <View style={ styles.profilesContainer2p }>
+        { boxes }
+      </View>
+    );
+  };
 
   return (
     <Modal
@@ -150,23 +227,33 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
       isVisible={visible}
       backdropColor="#000"
       backdropOpacity={0.75}
-      onBackdropPress={onPressHide}
+      onBackdropPress={() => {
+        if (mode === 'searching') {
+          handleCancelSearch();
+        }
+        onPressHide();
+      }}
       animationIn="fadeIn"
       animationOut="fadeOut"
       onBackButtonPress={onPressHide}
     >
       <Animated.View style={[styles.modalContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <View style={styles.header}>
-          <Text style={styles.title}>Play vs Friend (Online)</Text>
+          <Text style={styles.title}>
+            { mode === 'searching' ? 'Matchmaking' : 'Play Online' }
+          </Text>
         </View>
 
         {mode === 'menu' && (
           <View style={styles.menuContainer}>
-            <TouchableOpacity style={styles.menuButton} onPress={handleSelectCreate}>
-              <Text style={styles.menuButtonText}>Create Room</Text>
+            <TouchableOpacity style={styles.menuButton} onPress={handleQuickMatch}>
+              <Text style={styles.menuButtonText}>Quick Match</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.menuButton, { backgroundColor: '#4CAF50' }]} onPress={handleSelectJoin}>
-              <Text style={styles.menuButtonText}>Join Room</Text>
+            <TouchableOpacity style={[styles.menuButton, { backgroundColor: '#4CAF50' }]} onPress={handleSelectCreate}>
+              <Text style={styles.menuButtonText}>Create Private Room</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.menuButton, { backgroundColor: '#2196F3' }]} onPress={handleSelectJoin}>
+              <Text style={styles.menuButtonText}>Join Private Room</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.backButton} onPress={onPressHide}>
               <Text style={styles.backButtonText}>Cancel</Text>
@@ -218,11 +305,17 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
 
             <TouchableOpacity
               style={[styles.menuButton, userBalance < selectedBet && styles.menuButtonDisabled]}
-              onPress={handleCreateRoom}
+              onPress={() => {
+                if (actionType === 'quick_match') {
+                  handleStartSearch(selectedBet);
+                } else {
+                  handleCreateRoom(selectedBet);
+                }
+              }}
               disabled={userBalance < selectedBet}
             >
               <Text style={styles.menuButtonText}>
-                {userBalance < selectedBet ? 'Insufficient Coins' : 'Create Room'}
+                {userBalance < selectedBet ? 'Insufficient Coins' : (actionType === 'quick_match' ? 'Find Match' : 'Create Room')}
               </Text>
             </TouchableOpacity>
 
@@ -231,6 +324,26 @@ const ChessRoomModal = ({ visible, onPressHide, onMatchFound }) => {
             </TouchableOpacity>
           </View>
         )}
+        
+        { mode === 'searching' && (
+          <View style={ styles.searchingContainer }>
+            <View style={ styles.searchBetStrip }>
+              <Text style={ styles.searchBetStripText }>Entry: 💰 { entryFeeRef.current.toLocaleString() }</Text>
+              <View style={ styles.searchBetDivider } />
+              <Text style={ styles.searchBetStripPrize }>Prize: 💰 { (entryFeeRef.current * 2).toLocaleString() }</Text>
+            </View>
+
+            { renderProfileBoxes() }
+
+            { matchedPlayers.length < 2 ? (
+              <TouchableOpacity style={ styles.cancelButton } onPress={ handleCancelSearch }>
+                <Text style={ styles.cancelButtonText }>Cancel</Text>
+              </TouchableOpacity>
+            ) : (
+              <Text style={ styles.matchReadyText }>Match Ready! Starting...</Text>
+            ) }
+          </View>
+        ) }
 
         {mode === 'private' && (
           <View style={styles.privateContainer}>
@@ -462,6 +575,106 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 18,
     fontWeight: '800',
+  },
+  profilesContainer2p: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    paddingHorizontal: 10,
+    marginBottom: 20,
+  },
+  profileBox: {
+    width: 100,
+    height: 120,
+    backgroundColor: '#1E190A',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#D4B483',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+  },
+  avatarCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#D4B483',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  emptyAvatarCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginBottom: 10,
+  },
+  avatarText: {
+    color: '#0F0A1E',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  playerName: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  spinner: {
+    marginBottom: 10,
+  },
+  searchingTextSmall: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 12,
+  },
+  emptyText: {
+    color: 'rgba(255,255,255,0.3)',
+    fontSize: 12,
+  },
+  matchReadyText: {
+    color: '#4CAF50',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 10,
+  },
+  cancelButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#2A253C',
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  cancelButtonText: {
+    color: '#FFF',
+    fontWeight: '600',
+  },
+  searchBetStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1A1A2E',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#D4B483',
+  },
+  searchBetStripText: {
+    color: '#D4B483',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  searchBetDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  searchBetStripPrize: {
+    color: '#4CAF50',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
 
