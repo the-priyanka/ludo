@@ -1,9 +1,13 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, Alert, StatusBar, Animated, Image, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, Alert, StatusBar, Animated, Image, ImageBackground, BackHandler } from 'react-native';
 import { Chess } from 'chess.js';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { playSound } from '../helpers/SoundUtility';
 import { getBestMove } from '../helpers/chessAI';
+import chessSocketService from '../helpers/chessSocketService';
+import Toast from 'react-native-toast-message';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../helpers/api';
 
 import wp from '../assets/images/chess/wp.png';
 import wr from '../assets/images/chess/wr.png';
@@ -18,6 +22,8 @@ import bb from '../assets/images/chess/bb.png';
 import bq from '../assets/images/chess/bq.png';
 import bk from '../assets/images/chess/bk.png';
 import chessBg from '../assets/images/chess/chessBg.jpeg';
+import WinnerModal from '../components/WinnerModal';
+import ExitConfirmModal from '../components/ExitConfirmModal';
 
 const { width } = Dimensions.get('window');
 const BOARD_SIZE = width - 24;
@@ -41,6 +47,58 @@ const ChessMaster = ({ route, navigation }) => {
   const [animatingMove, setAnimatingMove] = useState(null);
   const [showLegalMoves, setShowLegalMoves] = useState(true);
   const [isThinking, setIsThinking] = useState(false);
+  const [winnerModalVisible, setWinnerModalVisible] = useState(false);
+  const [winnerModalData, setWinnerModalData] = useState({ title: '', message: '', prize: 0 });
+  const [exitModalVisible, setExitModalVisible] = useState(false);
+
+  const isOnline = route.params?.mode === 'vsFriendOnline';
+  const roomId = route.params?.roomId;
+  const roomState = route.params?.roomState;
+
+  const localPlayer = roomState?.players?.find(p => p.id === chessSocketService.socket?.id);
+  const localColor = localPlayer ? localPlayer.playerColor : 'w';
+
+  const queryClient = useQueryClient();
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.success ? res.data.user : null;
+    },
+    enabled: isOnline,
+  });
+
+  const updateCoinsMutation = useMutation({
+    mutationFn: async (newCoins) => {
+      const res = await api.put('/auth/me', { coins: newCoins });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['user'], data.user);
+    },
+  });
+
+  const hasDeducted = useRef(false);
+  useEffect(() => {
+    if (isOnline && user && roomState?.entryFee > 0 && !hasDeducted.current) {
+      hasDeducted.current = true;
+      updateCoinsMutation.mutate(user.coins - roomState.entryFee);
+    }
+  }, [isOnline, user, roomState, updateCoinsMutation]);
+
+  useEffect(() => {
+    const backAction = () => {
+      setExitModalVisible(true);
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
+
+    return () => backHandler.remove();
+  }, [isOnline, roomId, navigation]);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -79,14 +137,25 @@ const ChessMaster = ({ route, navigation }) => {
     setBoard(game.board());
     if (game.isCheckmate()) {
       playSound('cheer');
-      Alert.alert("Game Over", `Checkmate! ${ game.turn() === 'w' ? 'Black' : 'White' } wins!`);
+      const winner = game.turn() === 'w' ? 'Black' : 'White';
+
+      let prize = 0;
+      if (isOnline) {
+        const iWon = (game.turn() === 'b' && localColor === 'w') || (game.turn() === 'w' && localColor === 'b');
+        if (iWon && user && roomState?.entryFee > 0) {
+          prize = roomState.entryFee * 2;
+          updateCoinsMutation.mutate(user.coins + prize);
+        }
+      }
+      setWinnerModalData({ title: 'Game Over', message: `Checkmate! ${ winner } wins!`, prize });
+      setWinnerModalVisible(true);
     } else if (game.isDraw()) {
       playSound('ui');
       Alert.alert("Game Over", "Draw!");
     } else if (game.isCheck()) {
       playSound('ui');
     }
-  }, [game]);
+  }, [game, isOnline, localColor, user, roomState, updateCoinsMutation]);
 
   const executeMove = useCallback((moveOptions) => {
     try {
@@ -102,13 +171,16 @@ const ChessMaster = ({ route, navigation }) => {
           toSquare: move.to
         });
 
-        moveAnim.setValue({ x: fromIndices.j * SQUARE_SIZE, y: fromIndices.i * SQUARE_SIZE });
+        const getPhysicalX = (j) => (localColor === 'b' ? 7 - j : j) * SQUARE_SIZE;
+        const getPhysicalY = (i) => (localColor === 'b' ? 7 - i : i) * SQUARE_SIZE;
+
+        moveAnim.setValue({ x: getPhysicalX(fromIndices.j), y: getPhysicalY(fromIndices.i) });
 
         setSelectedSquare(null);
         setValidMoves([]);
 
         Animated.timing(moveAnim, {
-          toValue: { x: toIndices.j * SQUARE_SIZE, y: toIndices.i * SQUARE_SIZE },
+          toValue: { x: getPhysicalX(toIndices.j), y: getPhysicalY(toIndices.i) },
           duration: 250,
           useNativeDriver: true,
         }).start(() => {
@@ -126,7 +198,7 @@ const ChessMaster = ({ route, navigation }) => {
       // Invalid move
     }
     return false;
-  }, [game, board, moveAnim, updateBoard]);
+  }, [game, board, moveAnim, updateBoard, localColor]);
 
   useEffect(() => {
     if (isVsBot && game.turn() === 'b' && !game.isGameOver() && !animatingMove && !isThinking) {
@@ -141,8 +213,50 @@ const ChessMaster = ({ route, navigation }) => {
     }
   }, [game, isVsBot, animatingMove, isThinking, executeMove]);
 
+  // Online Socket Listeners
+  useEffect(() => {
+    if (!isOnline) return;
+
+    chessSocketService.onGameAction((data) => {
+      if (data.actionType === 'move') {
+        executeMove(data.payload);
+      }
+    });
+
+    chessSocketService.onPlayerDisconnected(() => {
+      let prize = 0;
+      if (user && roomState?.entryFee > 0) {
+        prize = roomState.entryFee * 2;
+        updateCoinsMutation.mutate(user.coins + prize);
+      }
+      setWinnerModalData({ title: 'Opponent Disconnected', message: 'You won the match by forfeit!', prize });
+      setWinnerModalVisible(true);
+    });
+
+    chessSocketService.onPlayerForfeited(() => {
+      let prize = 0;
+      if (user && roomState?.entryFee > 0) {
+        prize = roomState.entryFee * 2;
+        updateCoinsMutation.mutate(user.coins + prize);
+      }
+      setWinnerModalData({ title: 'Opponent Forfeited', message: 'You won the match!', prize });
+      setWinnerModalVisible(true);
+    });
+
+    return () => {
+      chessSocketService.offGameAction();
+      chessSocketService.offPlayerDisconnected();
+      chessSocketService.offPlayerForfeited();
+    };
+  }, [isOnline, executeMove, user, roomState, navigation, updateCoinsMutation]);
+
   const onSquarePress = (square) => {
-    if (animatingMove || (isVsBot && game.turn() === 'b')) return;
+    if (animatingMove) return;
+    if (isVsBot && game.turn() === 'b') return;
+    if (isOnline && game.turn() !== localColor) {
+      Toast.show({ type: 'info', text1: "Not your turn", position: 'top' });
+      return;
+    }
 
     if (selectedSquare) {
       const moveOptions = {
@@ -152,6 +266,9 @@ const ChessMaster = ({ route, navigation }) => {
       };
 
       if (executeMove(moveOptions)) {
+        if (isOnline) {
+          chessSocketService.emitGameAction('move', moveOptions, roomId);
+        }
         return;
       }
     }
@@ -269,6 +386,9 @@ const ChessMaster = ({ route, navigation }) => {
     const isKingInCheck = game.isCheck() && piece && piece.type === 'k' && piece.color === game.turn();
     const textColor = isLightSquare ? '#B58863' : '#F0D9B5';
 
+    const isLeftmost = j === (localColor === 'b' ? 7 : 0);
+    const isBottommost = i === (localColor === 'b' ? 0 : 7);
+
     return (
       <TouchableOpacity
         key={ square }
@@ -284,7 +404,7 @@ const ChessMaster = ({ route, navigation }) => {
       >
         { (isSelected || isValidMove) && <CornerBrackets /> }
 
-        { j === 0 && (
+        { isLeftmost && (
           <Text style={ [styles.coordinateText, styles.rankText, { color: textColor }] }>
             { rank }
           </Text>
@@ -292,7 +412,7 @@ const ChessMaster = ({ route, navigation }) => {
 
         { renderPiece(piece, square) }
 
-        { i === 7 && (
+        { isBottommost && (
           <Text style={ [styles.coordinateText, styles.fileText, { color: textColor }] }>
             { file }
           </Text>
@@ -312,14 +432,16 @@ const ChessMaster = ({ route, navigation }) => {
 
         {/* Action Buttons Toolbar */ }
         <View style={ styles.toolbar }>
-          <TouchableOpacity style={ styles.actionBtn } onPress={ () => navigation.goBack() }>
+          <TouchableOpacity style={ styles.actionBtn } onPress={ () => {
+            setExitModalVisible(true);
+          } }>
             <MaterialCommunityIcons name="arrow-u-left-top" size={ 26 } color="#FFD700" />
           </TouchableOpacity>
-          <TouchableOpacity style={ styles.actionBtn } onPress={ resetGame }>
-            <MaterialCommunityIcons name="refresh" size={ 26 } color="#FFD700" />
+          <TouchableOpacity style={ styles.actionBtn } onPress={ resetGame } disabled={ isOnline }>
+            <MaterialCommunityIcons name="refresh" size={ 26 } color={ isOnline ? "#666" : "#FFD700" } />
           </TouchableOpacity>
-          <TouchableOpacity style={ styles.actionBtn } onPress={ handleUndo }>
-            <MaterialCommunityIcons name="undo" size={ 26 } color="#FFD700" />
+          <TouchableOpacity style={ styles.actionBtn } onPress={ handleUndo } disabled={ isOnline }>
+            <MaterialCommunityIcons name="undo" size={ 26 } color={ isOnline ? "#666" : "#FFD700" } />
           </TouchableOpacity>
           <TouchableOpacity style={ styles.actionBtn } onPress={ () => setShowLegalMoves(!showLegalMoves) }>
             <MaterialCommunityIcons name={ showLegalMoves ? "lightbulb-outline" : "lightbulb-off-outline" } size={ 26 } color="#FFD700" />
@@ -331,16 +453,23 @@ const ChessMaster = ({ route, navigation }) => {
 
         <View style={ styles.gameArea }>
           <Animated.View style={ { opacity: fadeAnim, paddingHorizontal: 12, width: '100%', alignItems: 'flex-start' } }>
-            { renderCapturedPieces(capturedWhite, 'w') }
+            { renderCapturedPieces(localColor === 'b' ? capturedBlack : capturedWhite, localColor === 'b' ? 'b' : 'w') }
           </Animated.View>
 
           <Animated.View style={ [styles.boardContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }] }>
             <View style={ styles.boardBorder }>
-              { board.map((row, i) => (
-                <View key={ `row-${ i }` } style={ styles.row }>
-                  { row.map((_, j) => renderSquare(i, j)) }
-                </View>
-              )) }
+              { (localColor === 'b' ? [...board].reverse() : board).map((row, rowIndex) => {
+                const i = localColor === 'b' ? 7 - rowIndex : rowIndex;
+                const rowData = localColor === 'b' ? [...row].reverse() : row;
+                return (
+                  <View key={ `row-${ i }` } style={ styles.row }>
+                    { rowData.map((_, colIndex) => {
+                      const j = localColor === 'b' ? 7 - colIndex : colIndex;
+                      return renderSquare(i, j);
+                    }) }
+                  </View>
+                );
+              }) }
 
               { animatingMove && (
                 <Animated.View style={ {
@@ -373,20 +502,41 @@ const ChessMaster = ({ route, navigation }) => {
           </Animated.View>
 
           <Animated.View style={ { opacity: fadeAnim, paddingHorizontal: 12, width: '100%', alignItems: 'flex-end', marginTop: 8 } }>
-            { renderCapturedPieces(capturedBlack, 'b') }
+            { renderCapturedPieces(localColor === 'b' ? capturedWhite : capturedBlack, localColor === 'b' ? 'w' : 'b') }
           </Animated.View>
         </View>
 
         {/* Bottom Status Bar */ }
         <View style={ styles.statusBar }>
           <Text style={ styles.statusTextLeft }>
-            { isThinking ? 'AI is thinking...' : 'Amateur' }
+            { isOnline ? (localColor === 'w' ? 'You (White)' : 'You (Black)') : (isThinking ? 'AI is thinking...' : 'Amateur') }
           </Text>
           <Text style={ styles.statusTextRight }>
             { game.isGameOver() ? 'Game Over' : `${ currentMoveNum }. ${ isWhiteTurn ? 'White' : 'Black' }'s Move` }
           </Text>
         </View>
-
+        <WinnerModal
+          visible={winnerModalVisible}
+          title={winnerModalData.title}
+          message={winnerModalData.message}
+          prize={winnerModalData.prize}
+          onClose={() => {
+            setWinnerModalVisible(false);
+            if (isOnline) {
+              navigation.goBack();
+            }
+          }}
+        />
+        <ExitConfirmModal
+          visible={exitModalVisible}
+          isOnline={isOnline}
+          onCancel={() => setExitModalVisible(false)}
+          onConfirm={() => {
+            setExitModalVisible(false);
+            if (isOnline) chessSocketService.forfeitGame(roomId);
+            navigation.goBack();
+          }}
+        />
       </SafeAreaView>
     </ImageBackground>
   );

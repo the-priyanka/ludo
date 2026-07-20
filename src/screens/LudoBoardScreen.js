@@ -5,6 +5,8 @@ import {
   Animated,
   View,
   Text,
+  BackHandler,
+  Alert,
 } from 'react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { deviceHeight, deviceWidth } from '../constants/Scaling';
@@ -13,7 +15,7 @@ import MenuIcons from '../assets/images/menu.png';
 import { playSound } from '../helpers/SoundUtility';
 import MenuModel from '../components/MenuModel.js';
 import StartGame from '../assets/images/start.png';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon, UserIcon,
@@ -36,6 +38,7 @@ import {
   selectDiceRolled,
 } from '../redux/reducers/gameSelectors';
 import WinModal from '../components/WinModal';
+import ExitConfirmModal from '../components/ExitConfirmModal';
 import Dice from '../components/Dice';
 import { Colors } from '../constants/Colors';
 import Pocket from '../components/Pocket';
@@ -71,10 +74,12 @@ const LudoBoardScreen = () => {
   const gameMode = useSelector(state => state.game.gameMode);
 
   const isFocused = useIsFocused();
+  const navigation = useNavigation();
   const opacity = useRef(new Animated.Value(1)).current;
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [showStartImage, setShowStartImage] = useState(false);
+  const [exitModalVisible, setExitModalVisible] = useState(false);
 
   const roomId = useSelector(state => state.game.roomId);
   const entryFee = useSelector(state => state.game.entryFee) || 0;
@@ -155,6 +160,20 @@ const LudoBoardScreen = () => {
       };
     }
   }, [gameMode, dispatch, localPlayerNo]);
+
+  useEffect(() => {
+    const backAction = () => {
+      setExitModalVisible(true);
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
+
+    return () => backHandler.remove();
+  }, [gameMode, roomId, navigation, dispatch]);
 
   useEffect(() => {
     if (!isFocused) {
@@ -297,6 +316,19 @@ const LudoBoardScreen = () => {
 
       { winner !== null && <WinModal winner={ winner } /> }
 
+      <ExitConfirmModal
+        visible={exitModalVisible}
+        isOnline={gameMode === 'ONLINE_MULTIPLAYER'}
+        onCancel={() => setExitModalVisible(false)}
+        onConfirm={() => {
+          setExitModalVisible(false);
+          if (gameMode === 'ONLINE_MULTIPLAYER' && roomId) {
+            socketService.forfeitGame(roomId);
+          }
+          dispatch({ type: 'game/resetGame' });
+          navigation.goBack();
+        }}
+      />
     </Wrapper>
   );
 };
