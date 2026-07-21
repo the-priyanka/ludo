@@ -35,6 +35,14 @@ const getSoundPath = soundName => {
       return require('../assets/sfx/girl1.mp3');
     case 'girl3':
       return require('../assets/sfx/girl3.mp3');
+    case 'chess_move':
+      return require('../assets/sfx/chess_move.wav');
+    case 'chess_capture':
+      return require('../assets/sfx/chess_capture.wav');
+    case 'chess_check':
+      return require('../assets/sfx/chess_check.wav');
+    case 'chess_game_end':
+      return require('../assets/sfx/chess_game_end.wav');
     default:
       throw new Error(`Sound ${soundName} not found`);
   }

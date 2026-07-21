@@ -136,7 +136,7 @@ const ChessMaster = ({ route, navigation }) => {
   const updateBoard = useCallback(() => {
     setBoard(game.board());
     if (game.isCheckmate()) {
-      playSound('cheer');
+      playSound('chess_game_end');
       const winner = game.turn() === 'w' ? 'Black' : 'White';
 
       let prize = 0;
@@ -150,10 +150,10 @@ const ChessMaster = ({ route, navigation }) => {
       setWinnerModalData({ title: 'Game Over', message: `Checkmate! ${ winner } wins!`, prize });
       setWinnerModalVisible(true);
     } else if (game.isDraw()) {
-      playSound('ui');
+      playSound('chess_game_end');
       Alert.alert("Game Over", "Draw!");
     } else if (game.isCheck()) {
-      playSound('ui');
+      playSound('chess_check');
     }
   }, [game, isOnline, localColor, user, roomState, updateCoinsMutation]);
 
@@ -185,9 +185,9 @@ const ChessMaster = ({ route, navigation }) => {
           useNativeDriver: true,
         }).start(() => {
           if (move.captured) {
-            playSound('collide');
+            playSound('chess_capture');
           } else {
-            playSound('pile_move');
+            playSound('chess_move');
           }
           setAnimatingMove(null);
           updateBoard();
@@ -301,7 +301,7 @@ const ChessMaster = ({ route, navigation }) => {
       setBoard(game.board());
       setSelectedSquare(null);
       setValidMoves([]);
-      playSound('pile_move');
+      playSound('chess_move');
     }
   };
 

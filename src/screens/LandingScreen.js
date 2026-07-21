@@ -40,7 +40,10 @@ const GAMES = [
   },
 ];
 
-const CATEGORIES = ['HOT', 'LUDO'];
+const CATEGORIES = ['HOT',
+  'LUDO'
+
+];
 
 // ─── Game Card ───────────────────────────────────────────────────────────────
 const GameCard = ({ game }) => {
