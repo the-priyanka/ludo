@@ -63,7 +63,9 @@ export const handleDiceRollThunk = (newDiceNo, player) => async (dispatch, getSt
       if (newDiceNo === 6) {
         dispatch(enablePileSelection({ playerNo: player }));
       }
-      dispatch(enableCellSelection({ playerNo: player }));
+      if (canMove) {
+        dispatch(enableCellSelection({ playerNo: player }));
+      }
     }
     // For opponent's turn: do nothing here — they will select & emit move_piece
   }
@@ -114,13 +116,19 @@ export const handleForwardThunk = (playerNo, id, pos) => async (dispatch, getSta
     return;
   }
 
-  dispatch(disableTouch())
-  let finalPath = piece.pos;
   const beforePlayerPiece = state.game[`player${ playerNo }`].find(
     item => item.id === id
-  )
+  );
 
-  let travelCount = beforePlayerPiece.travelCount
+  let travelCount = beforePlayerPiece.travelCount;
+
+  // Prevent illegal moves that would overshoot the home/finish (57)
+  if (travelCount + diceNo > 57) {
+    return;
+  }
+
+  dispatch(disableTouch());
+  let finalPath = piece.pos;
 
   for (let i = 0; i < diceNo; i++) {
     const updatedPosition = getState();
@@ -169,40 +177,43 @@ export const handleForwardThunk = (playerNo, id, pos) => async (dispatch, getSta
   }
 
   if (areDifferentIds && !SafeSpots.includes(finalPlot[0].pos) && !StarSpots.includes(finalPlot[0].pos)) {
-    const enemyPiece = finalPlot.find(pieceItem => pieceItem.id[0] !== id[0])
-    const enemyId = enemyPiece.id[0]
-
-    let no = enemyId === "A" ? 1 : enemyId === "B" ? 2 : enemyId === "C" ? 3 : 4;
-
-    let backwardPath = startingPoints[no - 1]
-    let i = enemyPiece.pos;
+    // Get ALL enemy pieces at this position (not just one)
+    const enemyPieces = finalPlot.filter(pieceItem => pieceItem.id[0] !== id[0])
     playSound("collide")
 
-    while (i !== backwardPath) {
+    // Send each enemy piece back home
+    for (const enemyPiece of enemyPieces) {
+      const enemyId = enemyPiece.id[0]
+      let no = enemyId === "A" ? 1 : enemyId === "B" ? 2 : enemyId === "C" ? 3 : 4;
+      let backwardPath = startingPoints[no - 1]
+      let i = enemyPiece.pos;
+
+      while (i !== backwardPath) {
+        dispatch(
+          updatePlayerPieceValue({
+            playerNo: `player${ no }`,
+            pieceId: enemyPiece.id,
+            pos: i,
+            travelCount: 0
+          })
+        )
+        await delay(0.4);
+
+        i--;
+
+        if (i === 0) {
+          i = 52; // Reset i to 52 if it reaches 0
+        }
+      }
       dispatch(
         updatePlayerPieceValue({
           playerNo: `player${ no }`,
           pieceId: enemyPiece.id,
-          pos: i,
+          pos: 0,
           travelCount: 0
         })
       )
-      await delay(0.4); // consider reducing delay if possible
-
-      i--;
-
-      if (i === 0) {
-        i = 52; // Reset i to 52 if it reaches 0
-      }
     }
-    dispatch(
-      updatePlayerPieceValue({
-        playerNo: `player${ no }`,
-        pieceId: enemyPiece.id,
-        pos: 0,
-        travelCount: 0
-      })
-    )
 
     dispatch(unfreezeDice())
     return

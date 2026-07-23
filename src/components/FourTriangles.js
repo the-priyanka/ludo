@@ -38,7 +38,7 @@ const FourTriangles = ({ player1, player2, player3, player4 }) => {
       },
       {
         player: player3,
-        top: 52,
+        top: 5,
         left: 15,
         pieceColor: Colors.yellow,
         translate: 'translateX',
@@ -53,7 +53,7 @@ const FourTriangles = ({ player1, player2, player3, player4 }) => {
       {
         player: player4,
         top: 20,
-        left: -2,
+        left: 55,
         pieceColor: Colors.blue,
         translate: 'translateY',
       },
@@ -92,7 +92,7 @@ const FourTriangles = ({ player1, player2, player3, player4 }) => {
         />
       )}
 
-      <Svg height={size} width={size - 5}>
+      <Svg height="100%" width="100%" viewBox={`0 0 ${size} ${size}`}>
         <Polygon
           points={`0,0 ${size / 2},${size / 2} ${size},0`}
           fill={Colors.yellow}

@@ -241,14 +241,13 @@ const LudoBoardScreen = () => {
           <Dice color={ playerColors[TR] } player={ TR } rotate data={ playersData[TR] } />
         </View>
         <View style={ [styles.ludoBoard, { transform: [{ rotate: `${ boardRotation }deg` }] }] }>
-          <View style={styles.boardFrame}>
             <View style={ styles.plotContainer }>
               <Pocket color={ Colors.green } player={ 2 } data={ player2 }
-                isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(2) ? true : false) : true }
+                isPileEnable={ activePlayersList.includes(2) }
               />
               <VerticalPath cells={ Plot2Data } color={ Colors.yellow } />
               <Pocket color={ Colors.yellow } player={ 3 } data={ player3 }
-                isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(3) ? true : false) : true }
+                isPileEnable={ activePlayersList.includes(3) }
               />
             </View>
             <View style={ styles.pathContainer }>
@@ -263,13 +262,14 @@ const LudoBoardScreen = () => {
             </View>
             <View style={ styles.plotContainer }>
               <Pocket color={ Colors.red } player={ 1 } data={ player1 }
+                isPileEnable={ activePlayersList.includes(1) }
               />
               <VerticalPath cells={ Plot4Data } color={ Colors.red } />
               <Pocket color={ Colors.blue } player={ 4 } data={ player4 }
-                isPileEnable={ cpuPlayers.length > 0 ? (cpuPlayers.includes(4) ? true : false) : true }
+                isPileEnable={ activePlayersList.includes(4) }
               />
             </View>
-          </View>
+
         </View>
         <View
           style={ styles.flexRow }
@@ -337,29 +337,13 @@ const styles = StyleSheet.create({
   container: {
     alignSelf: 'center',
     justifyContent: 'center',
-    height: deviceHeight * 0.5,
     width: deviceWidth,
   },
   ludoBoard: {
-    width: '100%',
-    height: '100%',
+    width: deviceWidth,
+    height: deviceWidth,
     alignSelf: 'center',
     padding: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.6,
-    shadowRadius: 15,
-    elevation: 20,
-  },
-  boardFrame: {
-    flex: 1,
-    backgroundColor: '#8B5A2B', // Dark wood border color
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#4A3018',
-    borderBottomWidth: 8, // 3D thickness
-    borderRightWidth: 6,
   },
   menuIcons: {
     position: 'absolute',

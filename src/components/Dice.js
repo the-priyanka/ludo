@@ -61,6 +61,7 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
 
   const arrowAnim = useRef(new Animated.Value(0)).current;
   const [diceRolling, setDiceRolling] = useState(false);
+  const isRollingRef = useRef(false);
 
   useEffect(() => {
     const animateArrow = () => {
@@ -86,24 +87,21 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
   }, [currentPlayerChance, isDiceRolled]);
 
   const handleDicePress = async () => {
+    if (isRollingRef.current) return;
+    isRollingRef.current = true;
     const newDiceNo = Math.floor(Math.random() * 6) + 1;
+    // const newDiceNo = 
     playSound('dice_roll');
     setDiceRolling(true);
 
     if (gameMode === 'ONLINE_MULTIPLAYER') {
-      // Emit to server; the server broadcasts back to ALL clients (including us).
-      // The socket listener in LudoBoardScreen handles handleDiceRollThunk for everyone,
-      // so we must NOT also dispatch locally — that would double-process the turn.
       socketService.emitGameAction('roll_dice', { newDiceNo, player }, roomId);
-      await delay(800);
-      setDiceRolling(false);
-      // Do NOT dispatch locally here — handled by the socket echo via handleDiceRollThunk.
-      return;
     }
 
     await delay(800);
     dispatch(updateDiceNo({ diceNo: newDiceNo }));
     setDiceRolling(false);
+    isRollingRef.current = false;
 
     const isAnyPieceAlive = data?.findIndex(i => i.pos !== 0 && i.pos !== 57);
     const isAnyPieceLocked = data?.findIndex(i => i.pos === 0);
@@ -139,7 +137,9 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
       if (newDiceNo === 6) {
         dispatch(enablePileSelection({ playerNo: player }));
       }
-      dispatch(enableCellSelection({ playerNo: player }));
+      if (canMove) {
+        dispatch(enableCellSelection({ playerNo: player }));
+      }
     }
   };
 
@@ -169,7 +169,12 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
             </View>
 
             <View style={ styles.border2 }>
-              <View style={ styles.diceGradient }>
+              <LinearGradient
+                style={ styles.diceGradient }
+                colors={ ['#aac8ab', '#aac8ab', '#aac8ab'] }
+                start={ { x: 0, y: 0.5 } }
+                end={ { x: 1, y: 0.5 } }
+              >
                 <View style={ styles.diceContainer }>
                   { currentPlayerChance === player ? (
                     <>
@@ -185,7 +190,7 @@ const Dice = React.memo(({ color, rotate, player, data }) => {
                     </>
                   ) : null }
                 </View>
-              </View>
+              </LinearGradient>
             </View>
 
           </>

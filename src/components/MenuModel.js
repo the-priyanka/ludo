@@ -138,7 +138,7 @@ const MenuModel = ({ visible, onPressHide, gameMode, roomId, entryFee = 0, activ
   // Offline HOME
   const handleHome = useCallback(() => {
     dispatch(resetGame());
-    goBack();
+    resetAndNavigate('HomeScreen');
   }, [dispatch]);
 
   const playerCount = activePlayersList.length;

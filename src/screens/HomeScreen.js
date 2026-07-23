@@ -5,6 +5,7 @@ import {
   Image,
   Animated,
   Pressable,
+  TouchableOpacity,
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Wrapper from '../components/Wrapper';
@@ -24,7 +25,8 @@ import api from '../helpers/api';
 import { Colors } from '../constants/Colors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon
+  UserCircleIcon, FaceSmileIcon, StarIcon, FireIcon, HeartIcon, SparklesIcon,
+  ArrowLeftIcon,
 } from 'react-native-heroicons/solid';
 import VsCpuModal from '../components/VsCpuModal';
 import CoinSelectionModal from '../components/CoinSelectionModal';
@@ -188,12 +190,24 @@ const HomeScreen = () => {
     <Wrapper style={ styles.mainContainer }>
       {/* Profile and Balance Section */ }
       <View style={ styles.topBar }>
-        <Pressable
-          style={ styles.profileButton }
-          onPress={ () => navigate('ProfileScreen') }
-        >
-          <SelectedIcon size={ 40 } color={ Colors.yellow || '#FBBF24' } />
-        </Pressable>
+        <View style={ styles.topBarLeft }>
+          <TouchableOpacity
+            style={ styles.backButton }
+            onPress={ () => {
+              playSound('ui');
+              navigate('LandingScreen');
+            } }
+            activeOpacity={ 0.7 }
+          >
+            <ArrowLeftIcon size={ 22 } color="#FBBF24" />
+          </TouchableOpacity>
+          {/* <Pressable
+            style={ styles.profileButton }
+            onPress={ () => navigate('ProfileScreen') }
+          >
+            <SelectedIcon size={ 40 } color={ Colors.yellow || '#FBBF24' } />
+          </Pressable> */}
+        </View>
         { user && (
           <View style={ styles.balanceBadge }>
             <Text style={ styles.balanceIcon }>💰</Text>
@@ -315,6 +329,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  topBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FBBF24',
   },
   profileButton: {
     padding: 5,
